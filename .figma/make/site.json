@@ -1,0 +1,10 @@
+{
+  "description": "Offers a user-friendly interface with optimized color schemes to enhance user experience and accessibility for diverse audiences.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
