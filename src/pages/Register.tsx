@@ -2,14 +2,30 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import { C, FONT } from "@/tokens";
 
-const depts = ["IAS", "IPS", "IFS", "IRS", "IRTS", "IPoS", "IA&AS", "IDAS", "Other"];
-const ministries = ["Ministry of Education", "Ministry of Finance", "Home Ministry", "External Affairs", "DOPT", "MeitY", "Other"];
+const learnerTracks = [
+  "Higher Education / University Student",
+  "Data Science & AI Scholar",
+  "Public Sector & Policy Aspirant",
+  "Working Professional / Upskiller",
+  "Statistical & Economic Researcher",
+  "Civil Servant / Public Administrator",
+  "Other Lifelong Learner",
+];
+
+const institutionTypes = [
+  "University / Academic College",
+  "Research Institution (ISI, IIT, IIM, etc.)",
+  "Ministry / Government Department (MoSPI, etc.)",
+  "Private Technology / Enterprise",
+  "Independent Self-Paced Learner",
+  "Other",
+];
 
 export default function Register() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    name: "", email: "", password: "", dept: "", ministry: "", batch: "", agree: false,
+    name: "", email: "", password: "", track: "", institution: "", year: "", agree: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -33,32 +49,38 @@ export default function Register() {
 
       {/* Left panel */}
       <div style={{ width: "42%", flexShrink: 0, background: C.dark, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "48px 52px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg viewBox="0 0 32 32" fill="none" width={20} height={20}>
-              <path d="M16 3C16 3 8 9 8 17a8 8 0 0016 0C24 9 16 3 16 3z" fill="#fff"/>
-              <circle cx="16" cy="17" r="3" fill={C.accent}/>
-            </svg>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => navigate("/")}>
+          <img
+            src="/gyanmarg_logo.jpg"
+            alt="GyanMarg AI Logo"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "2px solid rgba(198, 133, 27, 0.7)",
+              boxShadow: "0 0 14px rgba(198, 133, 27, 0.35)",
+            }}
+          />
           <div>
             <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, color: "#fff" }}>
-              Karmayogi Shiksha <span style={{ color: C.accent }}>AI</span>
+              GyanMarg <span style={{ color: C.accent }}>AI</span>
             </div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)" }}>Powered by iGOT Karmayogi</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)" }}>Competency Intelligence Platform</div>
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: C.accent, marginBottom: 20 }}>Getting Started</div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: C.accent, marginBottom: 20 }}>Empowering Every Learner</div>
           <h2 style={{ fontFamily: FONT.display, fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 700, color: "#fff", lineHeight: 1.2, marginBottom: 20 }}>
-            Your AI-Powered<br/>Learning Begins Here
+            Your Intelligent<br/>Learning Journey Begins
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              { icon: "🎯", text: "Take an AI-powered competency assessment" },
-              { icon: "🔍", text: "Discover your skill gaps instantly" },
-              { icon: "🗺️", text: "Get a personalized learning roadmap" },
-              { icon: "📈", text: "Track progress with real-time dashboards" },
+              { icon: "🎯", text: "Mathematical gap matrix tailored to your target role" },
+              { icon: "🔍", text: "Zero-hallucination AI quizzes with verified citations" },
+              { icon: "🗺️", text: "Personalized roadmaps mapped to national FrAC standards" },
+              { icon: "📈", text: "Dynamic mastery tracking across cognitive & technical skills" },
             ].map(pt => (
               <div key={pt.text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 20 }}>{pt.icon}</span>
@@ -68,7 +90,7 @@ export default function Register() {
           </div>
         </div>
 
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>© 2026 Government of India · Karmayogi Shiksha AI</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>© 2026 GyanMarg AI · SIH26101 MoSPI DIID Ecosystem</div>
       </div>
 
       {/* Right — form */}
@@ -88,17 +110,17 @@ export default function Register() {
               </div>
             ))}
             <div style={{ marginLeft: 16, fontSize: 13, color: C.muted }}>
-              Step {step} of 2 — {step === 1 ? "Account Details" : "Service Information"}
+              Step {step} of 2 — {step === 1 ? "Account Details" : "Learner Profile"}
             </div>
           </div>
 
           <h1 style={{ fontFamily: FONT.display, fontSize: 26, fontWeight: 700, color: C.dark, marginBottom: 6 }}>
-            {step === 1 ? "Create your account" : "Your service details"}
+            {step === 1 ? "Create your account" : "Your learning profile"}
           </h1>
           <p style={{ fontSize: 14, color: C.muted, marginBottom: 28 }}>
             {step === 1
               ? <>Already registered? <Link to="/login" style={{ color: C.accent, fontWeight: 600, textDecoration: "none" }}>Sign in</Link></>
-              : "Help us personalize your learning experience"}
+              : "Help us calibrate the AI diagnostic to your background & goals"}
           </p>
 
           <form onSubmit={handleSubmit}>
@@ -110,8 +132,8 @@ export default function Register() {
                     onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Official Email</label>
-                  <input type="email" required placeholder="priya.sharma@ias.gov.in" value={form.email} onChange={e => f("email", e.target.value)} style={inputStyle}
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Email Address</label>
+                  <input type="email" required placeholder="priya.sharma@example.edu / .gov.in" value={form.email} onChange={e => f("email", e.target.value)} style={inputStyle}
                     onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
                 <div style={{ marginBottom: 24 }}>
@@ -124,31 +146,31 @@ export default function Register() {
 
             {step === 2 && (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14, marginBottom: 16 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Civil Service</label>
-                    <select value={form.dept} onChange={e => f("dept", e.target.value)} required style={{ ...inputStyle, appearance: "none" }}>
-                      <option value="">Select service</option>
-                      {depts.map(d => <option key={d}>{d}</option>)}
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Learner Track</label>
+                    <select value={form.track} onChange={e => f("track", e.target.value)} required style={{ ...inputStyle, appearance: "none" }}>
+                      <option value="">Select your track</option>
+                      {learnerTracks.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Batch Year</label>
-                    <input type="text" placeholder="e.g. 2021" value={form.batch} onChange={e => f("batch", e.target.value)} style={inputStyle}
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Target Year</label>
+                    <input type="text" placeholder="e.g. 2026" value={form.year} onChange={e => f("year", e.target.value)} style={inputStyle}
                       onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
                   </div>
                 </div>
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Ministry / Department</label>
-                  <select value={form.ministry} onChange={e => f("ministry", e.target.value)} style={{ ...inputStyle, appearance: "none" }}>
-                    <option value="">Select ministry</option>
-                    {ministries.map(m => <option key={m}>{m}</option>)}
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Institution / Affiliation Type</label>
+                  <select value={form.institution} onChange={e => f("institution", e.target.value)} style={{ ...inputStyle, appearance: "none" }}>
+                    <option value="">Select affiliation</option>
+                    {institutionTypes.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 24 }}>
                   <input type="checkbox" id="agree" checked={form.agree} onChange={e => f("agree", e.target.checked)} required style={{ accentColor: C.accent, width: 15, height: 15, cursor: "pointer", marginTop: 2 }} />
                   <label htmlFor="agree" style={{ fontSize: 13, color: C.muted, lineHeight: 1.5, cursor: "pointer" }}>
-                    I agree to the <a href="#" style={{ color: C.accent }}>Terms of Service</a> and confirm this is my official government email address.
+                    I agree to the <a href="#" style={{ color: C.accent }}>Terms of Service</a> and <a href="#" style={{ color: C.accent }}>Privacy Policy</a> for GyanMarg AI.
                   </label>
                 </div>
               </>
@@ -180,7 +202,7 @@ export default function Register() {
                     <circle cx="16" cy="17" r="2.5" fill="#fff"/>
                   </svg>
                 </div>
-                Register with iGOT Karmayogi SSO
+                Quick Student Assessment Demo
               </button>
             </>
           )}

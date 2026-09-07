@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const nav = [
   { to: "/admin/dashboard",   icon: "⊞", label: "Dashboard"              },
@@ -89,6 +90,7 @@ export default function AdminLayout() {
             <span style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>Karmayogi Shiksha AI</span>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <LanguageSelector variant="compact" />
             <button style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: C.dark, cursor: "pointer" }}>Export Report</button>
             <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>DA</div>
           </div>

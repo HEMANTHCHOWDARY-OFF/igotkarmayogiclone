@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const nav = [
   { to: "/student/dashboard",     icon: "⊞",  label: "Dashboard"            },
@@ -134,6 +135,7 @@ export default function StudentLayout() {
             <span style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>Karmayogi Shiksha AI</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <LanguageSelector variant="compact" />
             <button style={{ background: `${C.accent}18`, border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: C.accent, cursor: "pointer" }}>
               🤖 Ask AI Mentor
             </button>

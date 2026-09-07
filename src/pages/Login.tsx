@@ -27,47 +27,53 @@ export default function Login() {
         padding: "48px 52px",
       }}>
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg viewBox="0 0 32 32" fill="none" width={20} height={20}>
-              <path d="M16 3C16 3 8 9 8 17a8 8 0 0016 0C24 9 16 3 16 3z" fill="#fff"/>
-              <circle cx="16" cy="17" r="3" fill={C.accent}/>
-            </svg>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => navigate("/")}>
+          <img
+            src="/gyanmarg_logo.jpg"
+            alt="GyanMarg AI Logo"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "2px solid rgba(198, 133, 27, 0.7)",
+              boxShadow: "0 0 14px rgba(198, 133, 27, 0.35)",
+            }}
+          />
           <div>
-            <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, color: "#fff" }}>
-              Karmayogi Shiksha <span style={{ color: C.accent }}>AI</span>
+            <div style={{ fontFamily: FONT.display, fontSize: 18, fontWeight: 800, color: "#fff" }}>
+              GyanMarg <span style={{ color: C.accent }}>AI</span>
             </div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)" }}>Powered by iGOT Karmayogi</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>Competency Intelligence &amp; Learning Platform</div>
           </div>
         </div>
 
         {/* Center content */}
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: C.accent, marginBottom: 20 }}>
-            Welcome Back
+            Unified Learning Access
           </div>
           <h2 style={{ fontFamily: FONT.display, fontSize: "clamp(1.8rem,3vw,2.6rem)", fontWeight: 700, color: "#fff", lineHeight: 1.15, marginBottom: 20 }}>
-            Continue Your<br/>Learning Journey
+            Welcome to<br/>GyanMarg AI
           </h2>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 36 }}>
-            Access your personalized learning path, check your competency progress, and continue where you left off.
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.7, marginBottom: 36 }}>
+            Designed for all learners — students, scholars, aspirants, and administrators. Access your diagnostic results, personalized roadmap, AI mentor, and institutional analytics.
           </p>
 
           {/* Stats */}
           <div style={{ display: "flex", gap: 32 }}>
-            {[["12,840+", "Learners"], ["94%", "Completion Rate"], ["450+", "Courses"]].map(([val, lbl]) => (
+            {[["12,840+", "Active Learners"], ["94%", "Completion Rate"], ["450+", "Courses Mapped"]].map(([val, lbl]) => (
               <div key={lbl}>
                 <div style={{ fontFamily: FONT.mono, fontSize: 22, fontWeight: 700, color: C.accent }}>{val}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.40)" }}>{lbl}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{lbl}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Footer note */}
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>
-          © 2026 Government of India · Karmayogi Shiksha AI
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+          © 2026 GyanMarg AI · SIH26101 · Government of India
         </div>
       </div>
 
@@ -76,29 +82,28 @@ export default function Login() {
         <div style={{ width: "100%", maxWidth: 420 }}>
 
           <h1 style={{ fontFamily: FONT.display, fontSize: 26, fontWeight: 700, color: C.dark, marginBottom: 6 }}>Sign in</h1>
-          <p style={{ fontSize: 14, color: C.muted, marginBottom: 32 }}>
+          <p style={{ fontSize: 14, color: C.muted, marginBottom: 24 }}>
             Don't have an account? <Link to="/register" style={{ color: C.accent, fontWeight: 600, textDecoration: "none" }}>Register here</Link>
           </p>
 
           {/* Role toggle */}
-          <div style={{ display: "flex", background: C.surface, borderRadius: 10, padding: 4, marginBottom: 28, border: `1px solid ${C.border}` }}>
+          <div style={{ display: "flex", background: C.surface, borderRadius: 10, padding: 4, marginBottom: 24, border: `1px solid ${C.border}` }}>
             {(["student", "admin"] as const).map(r => (
               <button key={r} onClick={() => setRole(r)} style={{
                 flex: 1, padding: "8px", borderRadius: 7, border: "none", cursor: "pointer",
                 background: role === r ? C.dark : "transparent",
                 color: role === r ? "#fff" : C.muted,
                 fontWeight: 600, fontSize: 13, transition: "all 0.15s",
-                textTransform: "capitalize",
-              }}>{r === "student" ? "👤 Student" : "🏛️ Administrator"}</button>
+              }}>{r === "student" ? "🎓 Student / Learner" : "🏛️ Administrator"}</button>
             ))}
           </div>
 
           <form onSubmit={handleSubmit}>
             {/* Email */}
-            <div style={{ marginBottom: 18 }}>
+            <div style={{ marginBottom: 16 }}>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Email Address</label>
               <input
-                type="email" required placeholder="your.name@gov.in"
+                type="email" required placeholder="your.name@example.com or user@gov.in"
                 value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 style={{
                   width: "100%", padding: "11px 14px", borderRadius: 10, fontSize: 14,
@@ -130,7 +135,7 @@ export default function Login() {
             </div>
 
             {/* Remember */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
               <input type="checkbox" id="remember" checked={form.remember} onChange={e => setForm(f => ({ ...f, remember: e.target.checked }))} style={{ accentColor: C.accent, width: 15, height: 15, cursor: "pointer" }} />
               <label htmlFor="remember" style={{ fontSize: 13, color: C.muted, cursor: "pointer" }}>Remember me for 30 days</label>
             </div>
@@ -141,37 +146,64 @@ export default function Login() {
               background: loading ? C.muted : C.accent, color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer",
               transition: "background 0.15s",
             }}>
-              {loading ? "Signing in..." : "Sign in →"}
+              {loading ? "Signing in..." : `Sign in as ${role === "admin" ? "Administrator" : "Student"} →`}
             </button>
           </form>
 
-          {/* Divider */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
-            <div style={{ flex: 1, height: 1, background: C.border }} />
-            <span style={{ fontSize: 12, color: C.faint }}>or continue with</span>
-            <div style={{ flex: 1, height: 1, background: C.border }} />
+          {/* Quick Demo Access Buttons */}
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10, textAlign: "center" }}>
+              Quick Direct Access (Instant Demo)
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => navigate("/student/dashboard")}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: C.surface,
+                  color: C.dark,
+                  border: `1.5px solid ${C.border}`,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = C.accent)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}
+              >
+                <span>🎓</span> Student Demo
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/admin/dashboard")}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: C.surface,
+                  color: C.dark,
+                  border: `1.5px solid ${C.border}`,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = "#94B4DC")}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}
+              >
+                <span>🏛️</span> Admin Demo
+              </button>
+            </div>
           </div>
 
-          {/* iGOT SSO */}
-          <button style={{
-            width: "100%", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 600,
-            background: C.surface, color: C.dark, border: `1.5px solid ${C.border}`,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = C.dark)}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}
-            onClick={() => navigate(role === "admin" ? "/admin/dashboard" : "/student/dashboard")}
-          >
-            <div style={{ width: 22, height: 22, borderRadius: "50%", background: C.dark, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg viewBox="0 0 32 32" fill="none" width={12} height={12}>
-                <path d="M16 3C16 3 8 9 8 17a8 8 0 0016 0C24 9 16 3 16 3z" fill={C.accent}/>
-                <circle cx="16" cy="17" r="2.5" fill="#fff"/>
-              </svg>
-            </div>
-            Sign in with iGOT Karmayogi SSO
-          </button>
-
-          <p style={{ textAlign: "center", fontSize: 11, color: C.faint, marginTop: 24 }}>
+          <p style={{ textAlign: "center", fontSize: 11, color: C.faint, marginTop: 20 }}>
             By signing in, you agree to the <a href="#" style={{ color: C.accent }}>Terms of Service</a> and <a href="#" style={{ color: C.accent }}>Privacy Policy</a>
           </p>
         </div>

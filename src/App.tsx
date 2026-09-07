@@ -1,6 +1,12 @@
 import { RouterProvider } from "react-router";
 import { router } from "./app/routes";
+import { LanguageProvider } from "./context/LanguageContext";
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <LanguageProvider>
+      <RouterProvider router={router} />
+    </LanguageProvider>
+  );
 }
+
