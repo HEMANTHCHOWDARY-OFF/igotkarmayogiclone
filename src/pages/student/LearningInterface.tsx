@@ -199,9 +199,8 @@ export default function LearningInterface() {
             {currentLesson.title}
           </h2>
           <p style={{ color: C.muted, lineHeight: 1.7, fontSize: 14, marginBottom: 24 }}>
-            In this lesson, we explore how civil servants can access and interpret key government datasets.
-            You will understand the structure of national statistical systems and how to read reports from
-            organizations like MOSPI, NIC, and various ministry dashboards.
+            In this lesson, we explore how learners and researchers can access and interpret key structured datasets.
+            You will understand data architectures, sampling frameworks, and how to analyze open data repositories and statistical dashboards.
           </p>
 
           {/* Key Concepts */}
@@ -211,7 +210,7 @@ export default function LearningInterface() {
           }}>
             <div style={{ fontWeight: 700, color: C.dark, fontSize: 13, marginBottom: 10 }}>Key Concepts</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {["Statistical Systems", "MOSPI", "National Data Portal", "Open Government Data", "Data Literacy"].map(kw => (
+              {["Statistical Systems", "Data Architectures", "Public Data Repositories", "Sampling Methods", "Data Literacy"].map(kw => (
                 <span key={kw} style={{
                   background: "#EBF5F0", color: C.s1, fontSize: 12, fontWeight: 600,
                   padding: "4px 10px", borderRadius: 12

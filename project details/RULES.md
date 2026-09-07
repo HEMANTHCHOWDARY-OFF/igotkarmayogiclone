@@ -410,7 +410,7 @@ main
  └── feature/dashboard
 ```
 
-For a small SIH team, a simpler approach is acceptable:
+For a lean project / personal development workflow, a simpler approach is acceptable:
 
 ``` text
 main
@@ -869,7 +869,7 @@ Unnecessary Kubernetes
 Multiple databases
 ```
 
-The SIH MVP should prioritize:
+The project MVP should prioritize:
 
 -   Working product
 -   Reliability
@@ -1101,7 +1101,7 @@ The team should constantly ask:
 
 If not, don't build it.
 
-For the SIH MVP, prioritize:
+For the project MVP, prioritize:
 
 ``` text
 Core competency loop
@@ -1385,3 +1385,71 @@ COMMIT
 > **If the next developer or AI agent cannot understand the current
 > state of GyanMarg from the repository, the project documentation is
 > incomplete.**
+
+------------------------------------------------------------------------
+
+# 51. Independent Personal Project & Naming Protocol (Strict Rule)
+
+The project solves the educational competency problem statement, but **it must always be maintained, presented, and developed strictly as an independent personal project**.
+
+### Non-Negotiable Naming Constraints:
+
+1. **No Official Ministries or Government Agencies**:
+   Under NO circumstances should the UI, documentation, copy, metadata, or code contain real government or ministry authority claims.
+   - Strictly prohibited: `MoSPI`, `MoSPI DIID`, `NSSTA Academy`, `DoPT`, `DAR&PG`, `MeitY`, `MoLJ`, `MoF`, `NITI Aayog`, `Digital India`, `Government of India` / `Govt of India`.
+   - Use neutral domain and faculty descriptors instead: *Data Science Track*, *Public Policy & Strategy*, *Computing & Analytics*, *Applied Statistics*.
+
+2. **No Hackathon Branding in Product UI**:
+   Never include `Smart India Hackathon`, `SIH`, or problem IDs like `SIH26101` in user-facing pages, badges, headers, footers, or auth forms.
+   - Copyright notice must always be: `© 2026 GyanMarg AI. All rights reserved.`
+
+3. **No iGOT Karmayogi Cloning / Integration Claims**:
+   Never present the project as an "iGOT clone", "iGOT integration", or "iGOT certified".
+   - Use neutral platform nomenclature: *Standard Track*, *Core Curriculum*, *Verified Credential*, *Platform Module*.
+
+4. **No Proprietary Framework Labels (FrAC)**:
+   Do not use the government-specific acronym `FrAC` (Framework for Roles, Activities and Competencies).
+   - Use established learning science terms: *Competency Matrix*, *Structured Competency Standards*, *Domain Proficiency Benchmarks*, *Skill Taxonomy*.
+
+------------------------------------------------------------------------
+
+# 52. Authentic Platform Content vs. Mock/Fake Information Rule
+
+The project must explain real platform mechanics rather than relying on fabricated social proof or artificial vanity metrics.
+
+### Non-Negotiable Content Constraints:
+
+1. **No Fabricated Social Proof or Fake Testimonials**:
+   - Never invent mock user quotes, fake student names (e.g. "Aakash Verma - NIT", "Sneha Mukherjee"), fake deans, or imaginary institutional reviews.
+   - Eliminate all "What Our Community Says" type placeholder sections.
+
+2. **No Fake Vanity Metrics**:
+   - Do not display fabricated counts like "12,840+ Active Learners", "94% national completion rate", or imaginary cohort statistics in public layouts.
+   - When displaying metrics or stat bars, highlight verifiable architectural capabilities (e.g. `100% Source-Cited Grounding`, `Multi-Axis Diagnostics`, `Dynamic Pathways`, `Zero-Hallucination Quiz Engine`).
+
+3. **Focus on Real Architecture & Working Principles**:
+   - Replace placeholder marketing copy with authentic explanations of how the platform solves competency problems:
+     - **Objective Diagnostics**: Multi-axis scoring evaluating concrete conceptual understanding rather than subjective self-reporting.
+     - **Page-Level Grounding**: Chunk-level semantic retrieval extracting questions directly from syllabus literature with exact page citations.
+     - **Closed-Loop Adaptation**: Dynamic re-sequencing of learning paths based on diagnosed skill gaps.
+
+------------------------------------------------------------------------
+
+# 53. Professional Aesthetic, Zero-Emoji & Copy Quality Rule
+
+1. **Strict Zero-Emoji Policy**:
+   - Emojis make web applications look amateur, childish, or "AI-generated".
+   - Never use raw emojis (e.g., 🚀, 🏆, 📊, 🇮🇳, ℹ️, ⭐, ⏱, 👥) in the UI, cards, badges, or dashboard components.
+   - Use clean, minimal vector SVGs or typographic pill badges instead.
+
+2. **No AI Buzzword Overload**:
+   - Avoid generic, over-hyped buzzwords such as "AI-Powered Competency Intelligence Platform".
+   - Use clear, descriptive, professional product titles: "Adaptive Skill Diagnostic & Learning Platform".
+
+3. **Preserve Visual Structure and Design Integrity**:
+   - When editing copy or refining features, **NEVER** break the CSS, layouts, spacing, or visual design tokens.
+   - The design structure must remain stable and pristine while the textual matter is refined.
+
+4. **Eliminate Redundant Clutter and Repeated Tags**:
+   - Avoid overcrowding hero or feature sections with redundant pill tags or duplicate capability chips that repeat the same concepts across adjacent rows.
+   - Keep layouts focused, breathable, and purposeful.

@@ -2,16 +2,16 @@ import { C, FONT } from "@/tokens";
 
 const earned = [
   {
-    id: "IGOT-2026-KS-00421",
+    id: "GM-2026-KS-00421",
     course: "Foundational Digital Literacy",
-    dept: "Ministry of Electronics & IT",
+    dept: "Applied Computing Track",
     date: "May 28, 2026",
     score: 92,
   },
   {
-    id: "IGOT-2026-KS-00318",
+    id: "GM-2026-KS-00318",
     course: "Public Policy Essentials",
-    dept: "Department of Administrative Reforms",
+    dept: "Policy & Governance Track",
     date: "Apr 10, 2026",
     score: 88,
   },
@@ -37,7 +37,7 @@ export default function Certificates() {
           background: "#FFF8ED", border: `1px solid ${C.accent}`, color: C.accent,
           borderRadius: 20, padding: "8px 20px", fontSize: 14, fontWeight: 600
         }}>
-          🏆 iGOT Karmayogi Certified
+          GyanMarg Certified Learner
         </div>
       </div>
 
@@ -77,10 +77,10 @@ export default function Certificates() {
                     <div style={{
                       width: 20, height: 20, background: C.dark, borderRadius: "50%",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 10, color: "#fff", fontWeight: 700
-                    }}>🇮🇳</div>
-                    <span style={{ fontSize: 12, color: C.muted, letterSpacing: 0.5 }}>
-                      GOVERNMENT OF INDIA / iGOT KARMAYOGI
+                      fontSize: 10, color: C.accent, fontWeight: 700
+                    }}>GM</div>
+                    <span style={{ fontSize: 12, color: C.muted, letterSpacing: 0.5, fontWeight: 600 }}>
+                      GYANMARG AI · VERIFIED CREDENTIAL
                     </span>
                   </div>
 
@@ -179,15 +179,17 @@ export default function Certificates() {
         background: "#EBF5F0", border: `1px solid ${C.s1}`, borderRadius: 12,
         padding: "16px 20px", display: "flex", gap: 14, alignItems: "flex-start"
       }}>
-        <div style={{ fontSize: 22, flexShrink: 0 }}>ℹ️</div>
+        <div style={{
+          width: 24, height: 24, borderRadius: "50%", background: C.s1, color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0
+        }}>i</div>
         <div>
           <div style={{ fontWeight: 600, color: C.dark, fontSize: 14, marginBottom: 4 }}>
-            Certificate Validity & Recognition
+            Certificate Verification & Standards
           </div>
           <div style={{ color: C.muted, fontSize: 13, lineHeight: 1.6 }}>
-            iGOT Karmayogi certificates are officially recognized by the Department of Personnel & Training (DoPT),
-            Government of India. Certificates are valid for 3 years and can be verified through the iGOT portal.
-            They are considered during Annual Performance Appraisals (APARs) and promotions.
+            GyanMarg AI certificates authenticate verified competency mastery and course completion across standard domain benchmarks.
+            Certificates are cryptographically timestamped and can be independently verified via QR code inspection.
           </div>
         </div>
       </div>

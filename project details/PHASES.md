@@ -74,25 +74,28 @@ before the competency loop actually works.
 # 3. Phase Overview
 
 ``` text
-PHASE 0  → Project Foundation & Planning
-PHASE 1  → Repository & Development Environment
-PHASE 2  → Supabase Backend Foundation
-PHASE 3  → Authentication & User Management
-PHASE 4  → Competency Framework
-PHASE 5  → Assessment Engine
-PHASE 6  → Competency Scoring & Gap Analysis
+[COMPLETED]
+✓ PHASE 0  → Project Foundation & Planning
+✓ PHASE 1  → Repository & Development Environment
+✓ PHASE 2  → Supabase Backend Foundation
+✓ PHASE 3  → Authentication & User Management (Email/Password & Google OAuth)
+
+[ACTIVE REMAINING ROADMAP]
+PHASE 4  → Competency Framework & Database Domain Models
+PHASE 5  → Assessment Engine & Real-Time Test Submission
+PHASE 6  → Dynamic Competency Scoring & Gap Analysis Engine
 PHASE 7  → Learning Content & Resource System
-PHASE 8  → Personalized Learning Path
-PHASE 9  → Practice & Reassessment
-PHASE 10 → RAG Knowledge System
-PHASE 11 → AI Learning Assistant
-PHASE 12 → Progress & Role Readiness
-PHASE 13 → Certificates & Achievements
-PHASE 14 → Admin Portal & Analytics
-PHASE 15 → UI/UX Integration & Polish
-PHASE 16 → Security, Testing & Reliability
-PHASE 17 → Deployment & Production Readiness
-PHASE 18 → SIH Demo, Presentation & Evaluation
+PHASE 8  → Personalized Learning Path Sequencing
+PHASE 9  → Practice Mode & Reassessment Loop
+PHASE 10 → RAG Knowledge Ingestion & pgvector Search
+PHASE 11 → AI Mentor Grounded Assistant
+PHASE 12 → Progress & Role Readiness Metrics
+PHASE 13 → Verifiable Certificates & Achievements
+PHASE 14 → Admin Portal Backend & Live Analytics
+PHASE 15 → UI/UX Integration & Multilingual Polish
+PHASE 16 → Security, RLS Audit, Testing & Reliability
+PHASE 17 → Production Deployment & Staging
+PHASE 18 → SIH Final Demo, Presentation & Evaluation
 PHASE 19 → Post-MVP Expansion
 ```
 
@@ -148,225 +151,42 @@ The AI assistant should therefore **not be built first**.
 
 ------------------------------------------------------------------------
 
-# 5. Phase 0 --- Project Foundation & Planning
+# 5. Completed Milestones (Phase 0 – Phase 3)
 
-## Objective
+The following foundational phases have been fully executed, verified, and documented:
 
-Establish the product definition, architecture, design system, rules,
-and execution model before substantial implementation begins.
+### ✓ Phase 0 — Project Foundation & Planning [DONE]
+- Finalized product name (**GyanMarg AI**), vision, target users, and MVP scope.
+- Established primary documentation (`PRD.md`, `DESIGN.md`, `RULES.md`, `ARCHITECTURE.md`, `MEMORY.md`, `CONTEXT.md`).
+- Established the 8-step Competency Loop as the platform's core operating philosophy.
 
-## Deliverables
+### ✓ Phase 1 — Repository & Development Environment [DONE]
+- Repository configured with React 19, TypeScript, Vite, and strict code quality checks (`npm run build` passing with 0 errors).
+- Design token system and typography palette initialized in `src/tokens.ts` and `src/index.css`.
+- Dev server running on `http://localhost:8443`.
 
-``` text
-PRD.md
-DESIGN.md
-RULES.md
-PHASES.md
-ARCHITECTURE.md
-CONTEXT.md
-README.md
-```
+### ✓ Phase 2 — Supabase Backend Foundation [DONE]
+- Supabase cloud project connected via `.env` (`https://wztsczaaaiceaoerdbfr.supabase.co`).
+- Supabase JS client initialized (`src/lib/supabase.ts`) with active session restore support.
 
-## Tasks
-
--   Finalize product name: GyanMarg.
--   Finalize product vision.
--   Finalize target users.
--   Finalize MVP scope.
--   Finalize core competency loop.
--   Define initial target roles.
--   Define initial competencies.
--   Define technology stack.
--   Define design system.
--   Define Git workflow.
--   Define context-management workflow.
-
-## Exit Criteria
-
--   Team can explain the product in one minute.
--   MVP features are agreed upon.
--   Technology choices are documented.
--   Design direction is documented.
--   `CONTEXT.md` exists.
--   No major architectural ambiguity remains.
+### ✓ Phase 3 — Authentication & User Management [DONE]
+- **Real-Time Context (`src/context/AuthContext.tsx`)**: Reactive `onAuthStateChange` tracking user sign-in, token refresh, and sign-out events instantaneously.
+- **Route Guards (`src/components/ProtectedRoute.tsx`)**: Enforces authentication and role boundaries (`student` vs `admin`) with target redirect preservation.
+- **Live Authentication Pages (`src/pages/Login.tsx`, `src/pages/Register.tsx`)**:
+  - Live email/password login with actionable error alerts.
+  - Multi-step registration capturing learner track, institution, and target year.
+  - 1-click Demo mode fallback for rapid offline review.
+- **Live Google OAuth 2.0 Integration**:
+  - Configured Supabase Google provider and Google Cloud OAuth Client credentials.
+  - Verified authorized redirect URI (`https://wztsczaaaiceaoerdbfr.supabase.co/auth/v1/callback`).
+  - Tested live browser redirect to `accounts.google.com` and automatic token return.
+- **Dynamic Session Layouts (`src/layouts/StudentLayout.tsx`, `src/layouts/AdminLayout.tsx`)**:
+  - Real user display name, avatar, initials, and track displayed in sidebar and header.
+  - Real-time `signOut()` destroying sessions and returning to `/login`.
 
 ------------------------------------------------------------------------
 
-# 6. Phase 1 --- Repository & Development Environment
-
-## Objective
-
-Create a clean development foundation.
-
-## Stack
-
-``` text
-Next.js
-React
-TypeScript
-Tailwind CSS
-shadcn/ui
-Supabase
-PostgreSQL
-GitHub
-```
-
-## Tasks
-
-### Repository
-
--   Initialize Git repository.
--   Configure `.gitignore`.
--   Configure branch strategy.
--   Add README.
--   Add documentation files.
-
-### Frontend
-
--   Initialize Next.js.
--   Configure TypeScript.
--   Configure Tailwind.
--   Configure shadcn/ui.
--   Add Lucide icons.
--   Establish design tokens.
-
-### Code Quality
-
-Configure:
-
--   ESLint
--   Prettier
--   TypeScript strict mode
--   Basic testing framework
-
-## Exit Criteria
-
-``` text
-npm install
-npm run lint
-npm run typecheck
-npm run build
-```
-
-must succeed.
-
-------------------------------------------------------------------------
-
-# 7. Phase 2 --- Supabase Backend Foundation
-
-## Objective
-
-Establish the backend platform.
-
-## Components
-
-``` text
-Supabase Auth
-PostgreSQL
-Storage
-Edge Functions
-pgvector
-RLS
-```
-
-## Tasks
-
--   Create Supabase project.
--   Configure environments.
--   Connect local application.
--   Create initial database.
--   Configure migrations.
--   Configure storage buckets.
--   Enable pgvector.
--   Establish RLS conventions.
--   Create database seed strategy.
-
-## Initial Database Domains
-
-``` text
-profiles
-roles
-competencies
-role_competencies
-assessments
-questions
-learning_resources
-```
-
-## Exit Criteria
-
--   Application connects to Supabase.
--   Database migrations work.
--   Local development can access database.
--   RLS strategy is established.
--   Secrets are stored in environment variables.
-
-------------------------------------------------------------------------
-
-# 8. Phase 3 --- Authentication & User Management
-
-## Objective
-
-Create secure user identity and access control.
-
-## Features
-
--   Sign up
--   Sign in
--   Sign out
--   Session persistence
--   Password recovery
--   Profile
--   Role selection
--   Protected routes
-
-## User Roles
-
-``` text
-LEARNER
-ADMIN
-MENTOR (future)
-INSTITUTION (future)
-```
-
-## Tasks
-
--   Implement Supabase Auth.
--   Create profile creation flow.
--   Implement protected routes.
--   Implement role-based access.
--   Configure RLS.
--   Build onboarding flow.
-
-## Learner Onboarding
-
-``` text
-Create Account
-     ↓
-Basic Profile
-     ↓
-Select Target Role
-     ↓
-Explain Assessment
-     ↓
-Start Baseline Assessment
-```
-
-## Exit Criteria
-
-A new learner can:
-
-``` text
-Register
-→ Login
-→ Complete profile
-→ Select role
-→ Reach dashboard
-```
-
-------------------------------------------------------------------------
-
-# 9. Phase 4 --- Competency Framework
+# 6. Phase 4 --- Competency Framework
 
 ## Objective
 

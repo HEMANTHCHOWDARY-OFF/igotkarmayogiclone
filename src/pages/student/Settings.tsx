@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { C, FONT } from "@/tokens";
+import { useAuth } from "@/context/AuthContext";
 
 type Tab = "Profile" | "Notifications" | "Learning Preferences" | "Security";
 
@@ -44,18 +45,32 @@ const readOnlyStyle: React.CSSProperties = {
 };
 
 export default function Settings() {
+  const { profile: authProfile, updateProfileLocally } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("Profile");
 
   // Profile state
   const [profile, setProfile] = useState({
-    name: "Rajesh Kumar",
-    email: "rajesh.kumar@gov.in",
-    service: "IAS",
-    batch: "2019",
-    ministry: "Ministry of Rural Development",
+    name: authProfile?.fullName || "Priya Sharma",
+    email: authProfile?.email || "priya.sharma@example.gov.in",
+    service: authProfile?.track || "Higher Education / University Student",
+    batch: authProfile?.year || "2024",
+    ministry: authProfile?.institution || "Indian Institute of Public Administration",
     phone: "+91 98765 43210",
-    bio: "Civil servant committed to rural development and citizen-centric governance.",
+    bio: "Learner committed to domain mastery and continuous competency development.",
   });
+
+  useEffect(() => {
+    if (authProfile) {
+      setProfile(prev => ({
+        ...prev,
+        name: authProfile.fullName || prev.name,
+        email: authProfile.email || prev.email,
+        service: authProfile.track || prev.service,
+        batch: authProfile.year || prev.batch,
+        ministry: authProfile.institution || prev.ministry,
+      }));
+    }
+  }, [authProfile]);
 
   // Notifications state
   const [notifs, setNotifs] = useState({
@@ -78,6 +93,12 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
+    updateProfileLocally({
+      fullName: profile.name,
+      track: profile.service,
+      institution: profile.ministry,
+      year: profile.batch,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };

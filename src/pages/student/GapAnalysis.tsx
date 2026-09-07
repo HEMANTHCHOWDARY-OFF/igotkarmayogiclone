@@ -57,16 +57,16 @@ const severityStyle = (sev: string): React.CSSProperties => {
 
 const priorityOrder = [
   { rank: 1, area: "Digital Competency", action: "Start Digital Governance Fundamentals course", weeks: 3 },
-  { rank: 2, area: "Technical Knowledge", action: "Complete Technical Policy module on iGOT", weeks: 3 },
+  { rank: 2, area: "Technical Knowledge", action: "Complete Technical Policy module in Learning Path", weeks: 3 },
   { rank: 3, area: "Policy Analysis", action: "Enroll in Policy Analysis Framework", weeks: 2 },
   { rank: 4, area: "Leadership", action: "Leadership Essentials workshop series", weeks: 2 },
 ];
 
 const courseRecs = [
-  { title: "Digital Governance Fundamentals", source: "iGOT", duration: "8h", gap: "Digital Competency" },
-  { title: "e-Governance & Digital India", source: "Internal", duration: "6h", gap: "Digital Competency" },
-  { title: "Policy Analysis Framework", source: "iGOT", duration: "10h", gap: "Policy Analysis" },
-  { title: "Technical Skills for Civil Servants", source: "iGOT", duration: "7h", gap: "Technical Knowledge" },
+  { title: "Digital Governance Fundamentals", source: "Core", duration: "8h", gap: "Digital Competency" },
+  { title: "Digital Architectures & Platforms", source: "Elective", duration: "6h", gap: "Digital Competency" },
+  { title: "Policy Analysis Framework", source: "Core", duration: "10h", gap: "Policy Analysis" },
+  { title: "Technical Skills & Analytics", source: "Core", duration: "7h", gap: "Technical Knowledge" },
 ];
 
 export default function GapAnalysis() {
@@ -317,8 +317,8 @@ export default function GapAnalysis() {
                 style={{
                   fontSize: 11,
                   fontWeight: 700,
-                  color: c.source === "iGOT" ? C.s3 : C.s1,
-                  background: c.source === "iGOT" ? "#E0F4F2" : "#E6F4EC",
+                  color: c.source === "Core" ? C.s3 : C.s1,
+                  background: c.source === "Core" ? "#E0F4F2" : "#E6F4EC",
                   padding: "2px 8px",
                   borderRadius: 20,
                   width: "fit-content",

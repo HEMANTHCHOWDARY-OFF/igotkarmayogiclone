@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import { C, FONT } from "@/tokens";
+import { useAuth } from "@/context/AuthContext";
 
 const learnerTracks = [
   "Higher Education / University Student",
@@ -14,28 +15,80 @@ const learnerTracks = [
 
 const institutionTypes = [
   "University / Academic College",
-  "Research Institution (ISI, IIT, IIM, etc.)",
-  "Ministry / Government Department (MoSPI, etc.)",
-  "Private Technology / Enterprise",
+  "Research Institution (Institute / Lab)",
+  "Enterprise / Industry Organization",
+  "Professional Training Academy",
   "Independent Self-Paced Learner",
   "Other",
 ];
 
 export default function Register() {
   const navigate = useNavigate();
+  const { signUp, loginAsDemo } = useAuth();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     name: "", email: "", password: "", track: "", institution: "", year: "", agree: false,
   });
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
-  const f = (k: keyof typeof form, v: string | boolean) => setForm(p => ({ ...p, [k]: v }));
+  const f = (k: keyof typeof form, v: string | boolean) => {
+    setErrorMsg(null);
+    setForm(p => ({ ...p, [k]: v }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (step < 2) { setStep(2); return; }
+    setErrorMsg(null);
+    setInfoMsg(null);
+
+    if (step < 2) {
+      if (!form.name.trim()) {
+        setErrorMsg("Please enter your full name.");
+        return;
+      }
+      if (!form.email.trim()) {
+        setErrorMsg("Please enter your email address.");
+        return;
+      }
+      if (form.password.length < 6) {
+        setErrorMsg("Password must be at least 6 characters.");
+        return;
+      }
+      setStep(2);
+      return;
+    }
+
+    if (!form.agree) {
+      setErrorMsg("Please agree to the Terms of Service to continue.");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => { setLoading(false); navigate("/onboarding"); }, 900);
+    try {
+      const { error, needsEmailConfirmation } = await signUp({
+        email: form.email,
+        password: form.password,
+        fullName: form.name,
+        track: form.track,
+        institution: form.institution,
+        year: form.year,
+        role: "student",
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+      } else if (needsEmailConfirmation) {
+        setInfoMsg("Account registered successfully! A confirmation link has been sent to your email. Please check your inbox and verify to sign in.");
+      } else {
+        navigate("/onboarding");
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to create account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -66,7 +119,7 @@ export default function Register() {
             <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, color: "#fff" }}>
               GyanMarg <span style={{ color: C.accent }}>AI</span>
             </div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)" }}>Competency Intelligence Platform</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)" }}>Skill Diagnostic & Adaptive Learning</div>
           </div>
         </div>
 
@@ -77,20 +130,20 @@ export default function Register() {
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              { icon: "🎯", text: "Mathematical gap matrix tailored to your target role" },
-              { icon: "🔍", text: "Zero-hallucination AI quizzes with verified citations" },
-              { icon: "🗺️", text: "Personalized roadmaps mapped to national FrAC standards" },
-              { icon: "📈", text: "Dynamic mastery tracking across cognitive & technical skills" },
-            ].map(pt => (
-              <div key={pt.text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 20 }}>{pt.icon}</span>
-                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>{pt.text}</span>
+              "Quantitative gap matrix mapped directly to target role competencies",
+              "Multimodal assessment generator with page-level source citations",
+              "Adaptive learning roadmaps sequenced to structured competency standards",
+              "Continuous mastery tracking across domain and analytical skills",
+            ].map(text => (
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, color: "rgba(255,255,255,0.75)" }}>{text}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>© 2026 GyanMarg AI · SIH26101 MoSPI DIID Ecosystem</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>© 2026 GyanMarg AI. All rights reserved.</div>
       </div>
 
       {/* Right — form */}
@@ -117,11 +170,52 @@ export default function Register() {
           <h1 style={{ fontFamily: FONT.display, fontSize: 26, fontWeight: 700, color: C.dark, marginBottom: 6 }}>
             {step === 1 ? "Create your account" : "Your learning profile"}
           </h1>
-          <p style={{ fontSize: 14, color: C.muted, marginBottom: 28 }}>
+          <p style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
             {step === 1
               ? <>Already registered? <Link to="/login" style={{ color: C.accent, fontWeight: 600, textDecoration: "none" }}>Sign in</Link></>
               : "Help us calibrate the AI diagnostic to your background & goals"}
           </p>
+
+          {/* Real-time Error Alert */}
+          {errorMsg && (
+            <div style={{
+              background: "#FDF2F2",
+              border: "1px solid #F87171",
+              borderRadius: 8,
+              padding: "10px 14px",
+              marginBottom: 18,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+            }}>
+              <span style={{ color: "#DC2626", fontSize: 16, lineHeight: 1 }}>⚠</span>
+              <div style={{ fontSize: 12.5, color: "#991B1B", lineHeight: 1.45, flex: 1 }}>
+                {errorMsg}
+              </div>
+            </div>
+          )}
+
+          {/* Info Alert (e.g. Email verification required) */}
+          {infoMsg && (
+            <div style={{
+              background: "#EFF6FF",
+              border: "1px solid #60A5FA",
+              borderRadius: 8,
+              padding: "12px 14px",
+              marginBottom: 18,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+            }}>
+              <span style={{ color: "#2563EB", fontSize: 16, lineHeight: 1 }}>✉</span>
+              <div style={{ fontSize: 12.5, color: "#1E40AF", lineHeight: 1.45, flex: 1 }}>
+                {infoMsg}
+                <div style={{ marginTop: 8 }}>
+                  <Link to="/login" style={{ color: C.accent, fontWeight: 700, textDecoration: "underline" }}>Proceed to Sign In →</Link>
+                </div>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             {step === 1 && (
@@ -191,11 +285,18 @@ export default function Register() {
                 <span style={{ fontSize: 12, color: C.faint }}>or</span>
                 <div style={{ flex: 1, height: 1, background: C.border }} />
               </div>
-              <button style={{
-                width: "100%", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 600,
-                background: C.surface, color: C.dark, border: `1.5px solid ${C.border}`, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              }} onClick={() => navigate("/onboarding")}>
+              <button
+                type="button"
+                style={{
+                  width: "100%", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 600,
+                  background: C.surface, color: C.dark, border: `1.5px solid ${C.border}`, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                }}
+                onClick={() => {
+                  loginAsDemo("student");
+                  navigate("/onboarding");
+                }}
+              >
                 <div style={{ width: 22, height: 22, borderRadius: "50%", background: C.dark, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg viewBox="0 0 32 32" fill="none" width={12} height={12}>
                     <path d="M16 3C16 3 8 9 8 17a8 8 0 0016 0C24 9 16 3 16 3z" fill={C.accent}/>

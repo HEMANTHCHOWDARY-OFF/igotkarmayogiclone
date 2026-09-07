@@ -2,19 +2,19 @@ import { useState } from "react";
 import { C, FONT } from "@/tokens";
 
 const COURSES = [
-  { id: 1, title: "Foundation Course in Governance", source: "iGOT", domain: "Governance", level: "Beginner", duration: "20 hrs", enrolled: 3420, completion: 94, status: "Active" },
-  { id: 2, title: "Ethics & Integrity in Public Service", source: "Internal", domain: "Ethics", level: "Intermediate", duration: "15 hrs", enrolled: 2840, completion: 88, status: "Active" },
-  { id: 3, title: "Digital Governance Fundamentals", source: "iGOT", domain: "Digital", level: "Beginner", duration: "12 hrs", enrolled: 2200, completion: 72, status: "Active" },
-  { id: 4, title: "Public Finance Management", source: "Internal", domain: "Finance", level: "Advanced", duration: "30 hrs", enrolled: 1800, completion: 65, status: "Active" },
-  { id: 5, title: "Constitutional Law & Administration", source: "iGOT", domain: "Legal", level: "Intermediate", duration: "25 hrs", enrolled: 1560, completion: 80, status: "Active" },
-  { id: 6, title: "Policy Analysis & Formulation", source: "Internal", domain: "Policy", level: "Advanced", duration: "20 hrs", enrolled: 1240, completion: 58, status: "Draft" },
-  { id: 7, title: "Data-Driven Decision Making", source: "iGOT", domain: "Digital", level: "Intermediate", duration: "18 hrs", enrolled: 980, completion: 45, status: "Draft" },
-  { id: 8, title: "Leadership & Change Management", source: "Internal", domain: "Governance", level: "Advanced", duration: "22 hrs", enrolled: 760, completion: 0, status: "Archived" },
-  { id: 9, title: "RTI & Transparency", source: "iGOT", domain: "Legal", level: "Beginner", duration: "8 hrs", enrolled: 3100, completion: 91, status: "Active" },
-  { id: 10, title: "Rural Development Schemes", source: "Internal", domain: "Policy", level: "Intermediate", duration: "16 hrs", enrolled: 420, completion: 0, status: "Archived" },
+  { id: 1, title: "Foundation Course in Governance", source: "Standard", domain: "Governance", level: "Beginner", duration: "20 hrs", enrolled: 3420, completion: 94, status: "Active" },
+  { id: 2, title: "Ethics & Integrity in Public Service", source: "Elective", domain: "Ethics", level: "Intermediate", duration: "15 hrs", enrolled: 2840, completion: 88, status: "Active" },
+  { id: 3, title: "Digital Governance Fundamentals", source: "Standard", domain: "Digital", level: "Beginner", duration: "12 hrs", enrolled: 2200, completion: 72, status: "Active" },
+  { id: 4, title: "Public Finance Management", source: "Elective", domain: "Finance", level: "Advanced", duration: "30 hrs", enrolled: 1800, completion: 65, status: "Active" },
+  { id: 5, title: "Constitutional Law & Administration", source: "Standard", domain: "Legal", level: "Intermediate", duration: "25 hrs", enrolled: 1560, completion: 80, status: "Active" },
+  { id: 6, title: "Policy Analysis & Formulation", source: "Elective", domain: "Policy", level: "Advanced", duration: "20 hrs", enrolled: 1240, completion: 58, status: "Draft" },
+  { id: 7, title: "Data-Driven Decision Making", source: "Standard", domain: "Digital", level: "Intermediate", duration: "18 hrs", enrolled: 980, completion: 45, status: "Draft" },
+  { id: 8, title: "Leadership & Change Management", source: "Elective", domain: "Governance", level: "Advanced", duration: "22 hrs", enrolled: 760, completion: 0, status: "Archived" },
+  { id: 9, title: "Transparency & Information Access", source: "Standard", domain: "Legal", level: "Beginner", duration: "8 hrs", enrolled: 3100, completion: 91, status: "Active" },
+  { id: 10, title: "Regional Development Models", source: "Elective", domain: "Policy", level: "Intermediate", duration: "16 hrs", enrolled: 420, completion: 0, status: "Archived" },
 ];
 
-const TABS = ["All Courses", "iGOT Mapped", "Internal", "Archived"];
+const TABS = ["All Courses", "Standard Mapped", "Electives", "Archived"];
 const DOMAINS = ["All Domains", "Governance", "Ethics", "Digital", "Finance", "Legal", "Policy"];
 const LEVELS = ["All Levels", "Beginner", "Intermediate", "Advanced"];
 const STATUSES_FILTER = ["All Statuses", "Active", "Draft", "Archived"];
@@ -38,8 +38,8 @@ export default function CourseManagement() {
   const filtered = COURSES.filter((c) => {
     const tabMatch =
       activeTab === 0 ||
-      (activeTab === 1 && c.source === "iGOT") ||
-      (activeTab === 2 && c.source === "Internal") ||
+      (activeTab === 1 && c.source === "Standard") ||
+      (activeTab === 2 && c.source === "Elective") ||
       (activeTab === 3 && c.status === "Archived");
     const searchMatch = c.title.toLowerCase().includes(search.toLowerCase());
     const domainMatch = domain === "All Domains" || c.domain === domain;
@@ -88,7 +88,7 @@ export default function CourseManagement() {
             <button onClick={() => setShowAddModal(false)} style={{ background: "transparent", border: "none", fontSize: 18, cursor: "pointer", color: C.muted }}>x</button>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-            {["Course Title", "Domain", "Source (iGOT / Internal)", "Level", "Duration (hrs)", "Status"].map((f) => (
+            {["Course Title", "Domain", "Source (Standard / Elective)", "Level", "Duration (hrs)", "Status"].map((f) => (
               <div key={f}>
                 <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>{f}</div>
                 <input placeholder={`Enter ${f.toLowerCase()}`} style={{ ...selectStyle, width: "100%", boxSizing: "border-box" }} />
@@ -187,7 +187,7 @@ export default function CourseManagement() {
                   <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</div>
                 </td>
                 <td style={{ padding: "12px 14px" }}>
-                  <span style={{ background: c.source === "iGOT" ? "#E8F0FE" : "#F3EDE0", color: c.source === "iGOT" ? "#1A56DB" : C.s2, borderRadius: 6, padding: "3px 8px", fontSize: 12, fontWeight: 600 }}>{c.source}</span>
+                  <span style={{ background: c.source === "Standard" ? "#E8F0FE" : "#F3EDE0", color: c.source === "Standard" ? "#1A56DB" : C.s2, borderRadius: 6, padding: "3px 8px", fontSize: 12, fontWeight: 600 }}>{c.source}</span>
                 </td>
                 <td style={{ padding: "12px 14px", fontSize: 13 }}>{c.domain}</td>
                 <td style={{ padding: "12px 14px", fontSize: 13, color: C.muted }}>{c.level}</td>

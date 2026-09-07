@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
 import LanguageSelector from "@/components/LanguageSelector";
+import { useAuth } from "@/context/AuthContext";
 
 const nav = [
   { to: "/student/dashboard",     icon: "⊞",  label: "Dashboard"            },
@@ -21,6 +22,12 @@ const bottom = [
 
 export default function StudentLayout() {
   const navigate = useNavigate();
+  const { profile, signOut, isDemo } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: FONT.body, background: C.bg }}>
@@ -43,7 +50,7 @@ export default function StudentLayout() {
             </div>
             <div>
               <div style={{ fontFamily: FONT.display, fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.1 }}>
-                Karmayogi <span style={{ color: C.accent }}>AI</span>
+                GyanMarg <span style={{ color: C.accent }}>AI</span>
               </div>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Student Portal</div>
             </div>
@@ -52,10 +59,25 @@ export default function StudentLayout() {
 
         {/* Student info */}
         <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.s1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>PS</div>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%", background: C.s1,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
+            overflow: "hidden",
+          }}>
+            {profile?.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              profile?.initials || "PS"
+            )}
+          </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Priya Sharma</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)" }}>IAS · UPSC 2021</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {profile?.fullName || "Student Learner"}
+            </div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {profile?.track || "University Scholar"} {isDemo && <span style={{ color: C.accent, fontSize: 9 }}>(Demo)</span>}
+            </div>
           </div>
         </div>
 
@@ -108,7 +130,7 @@ export default function StudentLayout() {
               {item.label}
             </NavLink>
           ))}
-          <button onClick={() => navigate("/login")} style={{
+          <button onClick={handleLogout} style={{
             display: "flex", alignItems: "center", gap: 10,
             padding: "9px 12px", borderRadius: 8, width: "100%",
             background: "transparent", border: "none", cursor: "pointer",
@@ -132,14 +154,32 @@ export default function StudentLayout() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12, color: C.faint }}>Student Portal</span>
             <span style={{ color: C.border }}>›</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>Karmayogi Shiksha AI</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>GyanMarg AI</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <LanguageSelector variant="compact" />
-            <button style={{ background: `${C.accent}18`, border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: C.accent, cursor: "pointer" }}>
-              🤖 Ask AI Mentor
+            <button
+              onClick={() => navigate("/student/ai-mentor")}
+              style={{ background: `${C.accent}18`, border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: C.accent, cursor: "pointer" }}
+            >
+              Ask AI Mentor
             </button>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.s1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer" }}>PS</div>
+            <div
+              onClick={() => navigate("/student/settings")}
+              title={profile?.fullName || "Profile"}
+              style={{
+                width: 32, height: 32, borderRadius: "50%", background: C.s1,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer",
+                overflow: "hidden",
+              }}
+            >
+              {profile?.avatarUrl ? (
+                <img src={profile.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                profile?.initials || "PS"
+              )}
+            </div>
           </div>
         </header>
 

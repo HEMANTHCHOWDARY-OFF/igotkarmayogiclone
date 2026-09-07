@@ -46,43 +46,29 @@ export default function LanguageSelector({ variant = "topbar" }: LanguageSelecto
           display: "inline-flex",
           alignItems: "center",
           background: variant === "topbar" ? "rgba(255, 255, 255, 0.08)" : "rgba(27, 61, 41, 0.06)",
-          border: variant === "topbar" ? "1px solid rgba(255, 255, 255, 0.18)" : `1px solid ${C.border}`,
-          borderRadius: 20,
-          padding: "2px 4px",
-          gap: 2,
+          border: variant === "topbar" ? "1.5px solid rgba(255, 255, 255, 0.22)" : `1.5px solid ${C.border}`,
+          borderRadius: 24,
+          padding: "4px 8px",
+          gap: 6,
         }}
       >
-        {/* Globe icon */}
-        <span
-          style={{
-            padding: "0 4px 0 6px",
-            fontSize: 13,
-            color: variant === "topbar" ? C.accent : C.dark,
-            display: "flex",
-            alignItems: "center",
-          }}
-          title="Select Language / भाषा चुनें"
-        >
-          🌐
-        </span>
-
         {/* English Button */}
         <button
           type="button"
           onClick={() => setLanguage("en")}
           style={{
             fontFamily: FONT.body,
-            fontSize: 11,
-            fontWeight: language === "en" ? 700 : 500,
+            fontSize: 14.5,
+            fontWeight: language === "en" ? 700 : 600,
             color: language === "en"
               ? "#FFFFFF"
-              : variant === "topbar" ? "rgba(255, 255, 255, 0.65)" : C.muted,
+              : variant === "topbar" ? "rgba(255, 255, 255, 0.75)" : C.muted,
             background: language === "en"
               ? (variant === "topbar" ? C.accent : C.dark)
               : "transparent",
             border: "none",
-            borderRadius: 14,
-            padding: "3px 10px",
+            borderRadius: 20,
+            padding: "8px 18px",
             cursor: "pointer",
             transition: "all 0.18s ease",
             outline: "none",
@@ -97,17 +83,17 @@ export default function LanguageSelector({ variant = "topbar" }: LanguageSelecto
           onClick={() => setLanguage("hi")}
           style={{
             fontFamily: FONT.body,
-            fontSize: 11,
-            fontWeight: language === "hi" ? 700 : 500,
+            fontSize: 14.5,
+            fontWeight: language === "hi" ? 700 : 600,
             color: language === "hi"
               ? "#FFFFFF"
-              : variant === "topbar" ? "rgba(255, 255, 255, 0.65)" : C.muted,
+              : variant === "topbar" ? "rgba(255, 255, 255, 0.75)" : C.muted,
             background: language === "hi"
               ? (variant === "topbar" ? C.accent : C.dark)
               : "transparent",
             border: "none",
-            borderRadius: 14,
-            padding: "3px 10px",
+            borderRadius: 20,
+            padding: "8px 18px",
             cursor: "pointer",
             transition: "all 0.18s ease",
             outline: "none",
@@ -125,10 +111,10 @@ export default function LanguageSelector({ variant = "topbar" }: LanguageSelecto
           style={{
             background: "transparent",
             border: "none",
-            color: variant === "topbar" ? "rgba(255, 255, 255, 0.7)" : C.muted,
+            color: variant === "topbar" ? "rgba(255, 255, 255, 0.8)" : C.muted,
             cursor: "pointer",
-            fontSize: 9,
-            padding: "0 6px 0 2px",
+            fontSize: 11,
+            padding: "0 8px 0 2px",
             display: "flex",
             alignItems: "center",
           }}

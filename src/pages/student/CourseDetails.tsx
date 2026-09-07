@@ -86,7 +86,7 @@ export default function CourseDetails() {
           <span style={{
             background: "rgba(198,133,27,0.3)", color: "#F5C866", borderRadius: 12, padding: "4px 12px",
             fontSize: 12, fontWeight: 600
-          }}>iGOT Karmayogi</span>
+          }}>Standard Curriculum</span>
         </div>
         <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 8px", fontFamily: FONT.display }}>
           {COURSE.title}
@@ -96,12 +96,13 @@ export default function CourseDetails() {
         </div>
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           {[
-            ["⏱", COURSE.duration],
-            ["👥", `${COURSE.enrolled.toLocaleString()} enrolled`],
-            ["⭐", `${COURSE.rating} (${COURSE.reviews} reviews)`],
-          ].map(([icon, label]) => (
+            COURSE.duration,
+            `${COURSE.enrolled.toLocaleString()} enrolled`,
+            `${COURSE.rating} / 5.0 (${COURSE.reviews} reviews)`,
+          ].map((label) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "rgba(255,255,255,0.85)" }}>
-              <span>{icon}</span><span>{label}</span>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent }} />
+              <span>{label}</span>
             </div>
           ))}
         </div>

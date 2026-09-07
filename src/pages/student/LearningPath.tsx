@@ -11,20 +11,20 @@ const phases = [
 
 const phaseCourses = {
   1: [
-    { title: "Ethics & Governance Basics", source: "iGOT", duration: "6h", competency: "Ethics", status: "Completed", progress: 100 },
+    { title: "Ethics & Governance Basics", source: "Core", duration: "6h", competency: "Ethics", status: "Completed", progress: 100 },
     { title: "Communication for Civil Services", source: "Internal", duration: "4h", competency: "Communication", status: "Completed", progress: 100 },
   ],
   2: [
-    { title: "Digital Governance Fundamentals", source: "iGOT", duration: "8h", competency: "Digital", status: "In Progress", progress: 65 },
-    { title: "Policy Analysis Framework", source: "iGOT", duration: "10h", competency: "Policy", status: "Not Started", progress: 0 },
+    { title: "Digital Governance Fundamentals", source: "Core", duration: "8h", competency: "Digital", status: "In Progress", progress: 65 },
+    { title: "Policy Analysis Framework", source: "Core", duration: "10h", competency: "Policy", status: "Not Started", progress: 0 },
     { title: "Leadership Essentials", source: "Internal", duration: "6h", competency: "Leadership", status: "In Progress", progress: 30 },
   ],
   3: [
-    { title: "Advanced Digital Administration", source: "iGOT", duration: "12h", competency: "Digital", status: "Locked", progress: 0 },
-    { title: "Data Analytics for Policy", source: "iGOT", duration: "12h", competency: "Policy", status: "Locked", progress: 0 },
+    { title: "Advanced Digital Administration", source: "Core", duration: "12h", competency: "Digital", status: "Locked", progress: 0 },
+    { title: "Data Analytics for Policy", source: "Core", duration: "12h", competency: "Policy", status: "Locked", progress: 0 },
   ],
   4: [
-    { title: "iGOT Competency Certification", source: "iGOT", duration: "4h", competency: "All Domains", status: "Locked", progress: 0 },
+    { title: "Core Competency Certification", source: "Core", duration: "4h", competency: "All Domains", status: "Locked", progress: 0 },
   ],
 };
 
@@ -59,8 +59,8 @@ function sourceTag(source: string) {
       style={{
         fontSize: 11,
         fontWeight: 700,
-        color: source === "iGOT" ? C.s3 : C.s1,
-        background: source === "iGOT" ? "#E0F4F2" : "#E6F4EC",
+        color: source === "Core" ? C.s3 : C.s1,
+        background: source === "Core" ? "#E0F4F2" : "#E6F4EC",
         padding: "2px 7px",
         borderRadius: 20,
       }}

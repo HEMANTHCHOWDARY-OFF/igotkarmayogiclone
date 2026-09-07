@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 import PublicLayout   from "@/layouts/PublicLayout";
 import StudentLayout  from "@/layouts/StudentLayout";
 import AdminLayout    from "@/layouts/AdminLayout";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Landing              from "@/pages/Landing";
 import Login                from "@/pages/Login";
@@ -43,7 +44,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/student",
-    Component: StudentLayout,
+    element: (
+      <ProtectedRoute requiredRole="student">
+        <StudentLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="/student/dashboard" replace /> },
       { path: "dashboard",     Component: StudentDashboard  },
@@ -64,7 +69,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    Component: AdminLayout,
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
       { path: "dashboard",   Component: AdminDashboard       },

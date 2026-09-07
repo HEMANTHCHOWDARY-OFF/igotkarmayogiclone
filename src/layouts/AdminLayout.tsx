@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
 import LanguageSelector from "@/components/LanguageSelector";
+import { useAuth } from "@/context/AuthContext";
 
 const nav = [
   { to: "/admin/dashboard",   icon: "⊞", label: "Dashboard"              },
@@ -13,6 +14,12 @@ const nav = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const { profile, signOut, isDemo } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: FONT.body, background: C.bg }}>
@@ -30,7 +37,7 @@ export default function AdminLayout() {
             </div>
             <div>
               <div style={{ fontFamily: FONT.display, fontSize: 12, fontWeight: 700, color: "#fff" }}>
-                Karmayogi <span style={{ color: C.accent }}>AI</span>
+                GyanMarg <span style={{ color: C.accent }}>AI</span>
               </div>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Admin Portal</div>
             </div>
@@ -39,10 +46,25 @@ export default function AdminLayout() {
 
         {/* Admin info */}
         <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>DA</div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>Dr. Anand Kumar</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)" }}>Training Director · DOPT</div>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%", background: C.accent,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0,
+            overflow: "hidden",
+          }}>
+            {profile?.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              profile?.initials || "DA"
+            )}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {profile?.fullName || "Dr. Anand Kumar"}
+            </div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.40)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {profile?.institution || "Training Director · DOPT"} {isDemo && <span style={{ color: C.accent, fontSize: 9 }}>(Demo)</span>}
+            </div>
           </div>
         </div>
 
@@ -64,7 +86,7 @@ export default function AdminLayout() {
         </nav>
 
         <div style={{ padding: "10px 10px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-          <button onClick={() => navigate("/login")} style={{
+          <button onClick={handleLogout} style={{
             display: "flex", alignItems: "center", gap: 10,
             padding: "9px 12px", borderRadius: 8, width: "100%",
             background: "transparent", border: "none", cursor: "pointer",
@@ -87,12 +109,26 @@ export default function AdminLayout() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12, color: C.faint }}>Admin Portal</span>
             <span style={{ color: C.border }}>›</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>Karmayogi Shiksha AI</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>GyanMarg AI</span>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <LanguageSelector variant="compact" />
             <button style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: C.dark, cursor: "pointer" }}>Export Report</button>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>DA</div>
+            <div
+              title={profile?.fullName || "Admin Profile"}
+              style={{
+                width: 32, height: 32, borderRadius: "50%", background: C.accent,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, fontWeight: 700, color: "#fff",
+                overflow: "hidden",
+              }}
+            >
+              {profile?.avatarUrl ? (
+                <img src={profile.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                profile?.initials || "DA"
+              )}
+            </div>
           </div>
         </header>
         <main style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>

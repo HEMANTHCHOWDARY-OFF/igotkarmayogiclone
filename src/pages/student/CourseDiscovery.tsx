@@ -3,20 +3,20 @@ import { Link } from "react-router";
 import { C, FONT } from "@/tokens";
 
 const allCourses = [
-  { id: 1, icon: "📊", title: "Data-Driven Governance", dept: "DoPT", source: "iGOT", level: "Intermediate", duration: 6, domain: "Digital", desc: "Learn to leverage data analytics for effective policy making and governance decisions." },
-  { id: 2, icon: "📜", title: "Public Policy Essentials", dept: "DAR&PG", source: "iGOT", level: "Beginner", duration: 3, domain: "Policy", desc: "Foundational concepts of public policy formulation, implementation, and evaluation." },
-  { id: 3, icon: "💻", title: "Foundational Digital Literacy", dept: "MeitY", source: "iGOT", level: "Beginner", duration: 2, domain: "Digital", desc: "Essential digital skills for modern civil servants in a technology-driven government." },
-  { id: 4, icon: "🤝", title: "Citizen-Centric Service Delivery", dept: "DARPG", source: "Internal", level: "Intermediate", duration: 5, domain: "Service", desc: "Design and deliver government services that truly meet citizens' needs and expectations." },
-  { id: 5, icon: "🏛️", title: "Constitutional Framework of India", dept: "MoLJ", source: "iGOT", level: "Advanced", duration: 10, domain: "Governance", desc: "Deep dive into constitutional provisions relevant to civil service administration." },
-  { id: 6, icon: "💰", title: "Public Finance Management", dept: "MoF", source: "iGOT", level: "Advanced", duration: 8, domain: "Finance", desc: "Budgeting, expenditure management, and financial accountability in government." },
-  { id: 7, icon: "🌱", title: "Sustainable Development Goals", dept: "NITI Aayog", source: "Internal", level: "Beginner", duration: 3, domain: "Policy", desc: "India's commitment to the UN SDGs and the role of civil servants in achieving them." },
-  { id: 8, icon: "🗣️", title: "Effective Communication", dept: "DoPT", source: "iGOT", level: "Intermediate", duration: 4, domain: "Service", desc: "Communication strategies for civil servants in meetings, reports, and public engagement." },
+  { id: 1, icon: "DS", title: "Data-Driven Decision Making", dept: "Data Science Track", source: "Standard", level: "Intermediate", duration: 6, domain: "Digital", desc: "Learn to leverage data analytics for effective decision-making and operational strategy." },
+  { id: 2, icon: "PP", title: "Public Policy Essentials", dept: "Policy & Strategy", source: "Standard", level: "Beginner", duration: 3, domain: "Policy", desc: "Foundational concepts of public policy formulation, implementation, and evaluation." },
+  { id: 3, icon: "DL", title: "Foundational Digital Literacy", dept: "Computing Track", source: "Standard", level: "Beginner", duration: 2, domain: "Digital", desc: "Essential digital skills and technical architectures for modern application environments." },
+  { id: 4, icon: "SD", title: "Stakeholder-Centric Service Delivery", dept: "Public Administration", source: "Specialized", level: "Intermediate", duration: 5, domain: "Service", desc: "Design and deliver user services that effectively meet community needs and expectations." },
+  { id: 5, icon: "CL", title: "Regulatory & Constitutional Frameworks", dept: "Legal & Regulatory Studies", source: "Standard", level: "Advanced", duration: 10, domain: "Governance", desc: "In-depth study of legal principles and institutional governance structures." },
+  { id: 6, icon: "FM", title: "Public Finance & Resource Allocation", dept: "Economics & Finance", source: "Standard", level: "Advanced", duration: 8, domain: "Finance", desc: "Budgeting, expenditure management, and financial accountability principles." },
+  { id: 7, icon: "SG", title: "Sustainable Development Goals & Metrics", dept: "Development Economics", source: "Specialized", level: "Beginner", duration: 3, domain: "Policy", desc: "Global sustainability frameworks, indicators, and practical implementation models." },
+  { id: 8, icon: "CM", title: "Executive Communication & Reporting", dept: "Management Studies", source: "Standard", level: "Intermediate", duration: 4, domain: "Service", desc: "Communication strategies for organizational briefings, technical reports, and public engagement." },
 ];
 
 const domains = ["Digital", "Policy", "Governance", "Finance", "Service", "Ethics"];
 const levels = ["Beginner", "Intermediate", "Advanced"];
 const durations = ["< 4h", "4–8h", "8h+"];
-const sources = ["iGOT", "Internal"];
+const sources = ["Standard", "Specialized"];
 
 const levelColor = (level: string) => {
   if (level === "Beginner") return { bg: "#EBF5F0", color: C.s1 };
@@ -182,10 +182,14 @@ export default function CourseDiscovery() {
                 transition: "box-shadow 0.2s"
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 32 }}>{course.icon}</div>
                   <div style={{
-                    background: course.source === "iGOT" ? "#EBF5F0" : "#F0EDFF",
-                    color: course.source === "iGOT" ? C.s1 : "#6B4EFF",
+                    width: 38, height: 38, borderRadius: 10, background: C.dark, color: C.accent,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, fontWeight: 800, fontFamily: FONT.mono
+                  }}>{course.icon}</div>
+                  <div style={{
+                    background: course.source === "Standard" ? "#EBF5F0" : "#F0EDFF",
+                    color: course.source === "Standard" ? C.s1 : "#6B4EFF",
                     fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 12
                   }}>
                     {course.source}
