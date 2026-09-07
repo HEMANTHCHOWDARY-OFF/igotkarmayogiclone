@@ -12,6 +12,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: process.env.FIGMA_PUBLIC_URL ? `${process.env.FIGMA_PUBLIC_URL}/` : '/',
+    envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
+    define: {
+      'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wztsczaaaiceaoerdbfr.supabase.co'),
+      'process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_UnIEEMCkUzUpeaHt7kLpUw_O8CNig68'),
+    },
     build: {
       sourcemap: emitSourcemaps ? 'inline' : false,
       minify: !emitSourcemaps,
