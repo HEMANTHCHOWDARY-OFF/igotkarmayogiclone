@@ -15,98 +15,177 @@ import {
   Cell,
 } from "recharts";
 import { C, FONT } from "@/tokens";
-
-const radarData = [
-  { domain: "Digital", current: 32, target: 80 },
-  { domain: "Technical", current: 38, target: 75 },
-  { domain: "Policy", current: 56, target: 80 },
-  { domain: "Communication", current: 75, target: 85 },
-  { domain: "Ethics", current: 82, target: 90 },
-  { domain: "Leadership", current: 68, target: 85 },
-];
-
-const gapBarData = [
-  { domain: "Digital", gap: 48 },
-  { domain: "Technical", gap: 37 },
-  { domain: "Policy", gap: 24 },
-  { domain: "Communication", gap: 10 },
-  { domain: "Ethics", gap: 8 },
-  { domain: "Leadership", gap: 17 },
-];
+import { useCompetency } from "@/context/CompetencyContext";
 
 function gapColor(gap: number) {
-  if (gap > 30) return C.s4;
-  if (gap >= 15) return C.accent;
-  return C.s1;
+  if (gap > 25) return C.s4;      // Critical gap (Red/Coral)
+  if (gap >= 10) return C.accent;  // Minor gap (Amber/Gold)
+  return C.s1;                    // Met Benchmark (Forest Green)
 }
-
-const tableRows = [
-  { domain: "Digital Competency", current: 32, target: 80, gap: 48, severity: "Critical" },
-  { domain: "Technical Knowledge", current: 38, target: 75, gap: 37, severity: "Critical" },
-  { domain: "Policy Analysis", current: 56, target: 80, gap: 24, severity: "Moderate" },
-  { domain: "Communication", current: 75, target: 85, gap: 10, severity: "Low" },
-  { domain: "Ethics & Integrity", current: 82, target: 90, gap: 8, severity: "Low" },
-  { domain: "Leadership", current: 68, target: 85, gap: 17, severity: "Moderate" },
-];
 
 const severityStyle = (sev: string): React.CSSProperties => {
   if (sev === "Critical") return { background: "#FDECEA", color: C.s4, border: `1px solid ${C.s4}` };
-  if (sev === "Moderate") return { background: "#FEF3E2", color: C.accent, border: `1px solid ${C.accent}` };
+  if (sev === "Minor") return { background: "#FEF3E2", color: C.accent, border: `1px solid ${C.accent}` };
   return { background: "#E6F4EC", color: C.s1, border: `1px solid ${C.s1}` };
 };
 
-const priorityOrder = [
-  { rank: 1, area: "Digital Competency", action: "Start Digital Governance Fundamentals course", weeks: 3 },
-  { rank: 2, area: "Technical Knowledge", action: "Complete Technical Policy module in Learning Path", weeks: 3 },
-  { rank: 3, area: "Policy Analysis", action: "Enroll in Policy Analysis Framework", weeks: 2 },
-  { rank: 4, area: "Leadership", action: "Leadership Essentials workshop series", weeks: 2 },
-];
-
-const courseRecs = [
-  { title: "Digital Governance Fundamentals", source: "Core", duration: "8h", gap: "Digital Competency" },
-  { title: "Digital Architectures & Platforms", source: "Elective", duration: "6h", gap: "Digital Competency" },
-  { title: "Policy Analysis Framework", source: "Core", duration: "10h", gap: "Policy Analysis" },
-  { title: "Technical Skills & Analytics", source: "Core", duration: "7h", gap: "Technical Knowledge" },
-];
+// Course catalog mapped to domain IDs
+const DOMAIN_COURSE_MAP: Record<string, { title: string; courseCode: string; duration: string; provider: string }> = {
+  stats: {
+    title: "Advanced Sampling Theory & NSS Survey Methodology",
+    courseCode: "NSSTA-ST-401",
+    duration: "12h",
+    provider: "NSSTA TPAC",
+  },
+  sql: {
+    title: "Enterprise SQL & High-Volume Microdata Aggregations for CPI/IIP",
+    courseCode: "DIID-DB-203",
+    duration: "8h",
+    provider: "DIID MoSPI",
+  },
+  python: {
+    title: "Python Data Science for Official Statistics & PLFS Cleansing",
+    courseCode: "MOSPI-PY-301",
+    duration: "10h",
+    provider: "NSSTA iGOT",
+  },
+  gis: {
+    title: "QGIS Spatial Sampling Frame Construction & Geo-tagging",
+    courseCode: "FOD-GIS-102",
+    duration: "9h",
+    provider: "FOD / Survey Academy",
+  },
+  ethics: {
+    title: "DPDP Act 2023 Statutory Compliance & UN Statistical Ethics",
+    courseCode: "NSSTA-ETH-501",
+    duration: "6h",
+    provider: "Ministry Legal Cell",
+  },
+};
 
 export default function GapAnalysis() {
   const navigate = useNavigate();
+  const { domains, getGapMetrics, lastAssessment } = useCompetency();
+
+  const gapMetrics = getGapMetrics();
+
+  // Radar chart data comparing User Current vs Target Benchmark
+  const radarData = domains.map((d) => ({
+    domain: d.short,
+    current: d.currentScore,
+    target: d.targetBenchmark,
+    fullName: d.name,
+  }));
+
+  // Bar chart data for gap size
+  const gapBarData = gapMetrics.map((m) => ({
+    domain: m.domain,
+    short: domains.find((d) => d.id === m.domainId)?.short || m.domain,
+    gap: m.gap,
+    severity: m.severity,
+  }));
+
+  // Overview metrics
+  const criticalCount = gapMetrics.filter((m) => m.severity === "Critical").length;
+  const minorCount = gapMetrics.filter((m) => m.severity === "Minor").length;
+  const totalGapPoints = gapMetrics.reduce((acc, curr) => acc + curr.gap, 0);
+  const avgGap = Math.round(totalGapPoints / gapMetrics.length);
+
+  const topPriorityAreas = gapMetrics
+    .filter((m) => m.gap > 0)
+    .slice(0, 2)
+    .map((m) => domains.find((d) => d.id === m.domainId)?.short || m.domain)
+    .join(", ");
+
+  const assessmentDate = lastAssessment?.date
+    ? new Date(lastAssessment.date).toLocaleDateString("en-IN", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Initial Baseline Setup";
+
+  // Priority course recommendations based on highest gap
+  const prioritizedCourses = gapMetrics.map((m) => {
+    const courseMeta = DOMAIN_COURSE_MAP[m.domainId] || {
+      title: `${m.domain} Remediation Module`,
+      courseCode: "IGOT-MOD-101",
+      duration: "6h",
+      provider: "iGOT Karmayogi",
+    };
+    return {
+      ...courseMeta,
+      gap: m.domain,
+      domainId: m.domainId,
+      gapPoints: m.gap,
+      severity: m.severity,
+    };
+  });
 
   return (
     <div style={{ fontFamily: FONT.body, color: C.dark, padding: "28px 32px" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
         <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                background: "#1B3D2915",
+                color: "#1B3D29",
+                padding: "3px 8px",
+                borderRadius: 4,
+              }}
+            >
+              MoSPI Competency Intelligence
+            </span>
+            <span style={{ fontSize: 12, color: C.muted }}>Target Role: Statistical Officer (Cadre SSS / ISS)</span>
+          </div>
           <h2 style={{ fontFamily: FONT.display, fontSize: 26, fontWeight: 700, margin: 0, color: C.dark }}>
-            Competency Gap Analysis
+            AI Competency Gap Analysis & Benchmarking
           </h2>
           <p style={{ margin: "6px 0 0", color: C.muted, fontSize: 14 }}>
-            Based on your assessment of June 5, 2026
+            Deterministic gap quantification vs. MoSPI FrAC benchmarks:{" "}
+            <code style={{ fontFamily: FONT.mono, background: C.border, padding: "2px 6px", borderRadius: 4, fontSize: 12 }}>
+              Gap = max(0, Benchmark - Demonstrated)
+            </code>
+            {" · "}Last evaluated: {assessmentDate}
           </p>
         </div>
-        <button
-          style={{
-            padding: "9px 18px",
-            borderRadius: 8,
-            border: `1.5px solid ${C.accent}`,
-            background: "transparent",
-            color: C.accent,
-            fontFamily: FONT.body,
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Reassess →
-        </button>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={() => navigate("/student/assessment")}
+            style={{
+              padding: "9px 18px",
+              borderRadius: 8,
+              border: `1.5px solid ${C.accent}`,
+              background: "transparent",
+              color: C.accent,
+              fontFamily: FONT.body,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            ↻ Retake Diagnostic
+          </button>
+        </div>
       </div>
 
       {/* Overview stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
         {[
-          { label: "Overall Gap Score", value: "28 pts", note: "Below target average" },
-          { label: "Critical Gaps", value: "2", note: "Digital & Technical" },
-          { label: "Priority Areas", value: "Digital, Technical", note: "Focus these first" },
+          { label: "Net Average Gap", value: `${avgGap} pts`, note: "Average variance from role benchmark", color: avgGap > 20 ? C.s4 : C.accent },
+          { label: "Critical Gaps (>25%)", value: `${criticalCount}`, note: `${criticalCount} domain(s) require immediate remediation`, color: criticalCount > 0 ? C.s4 : C.s1 },
+          { label: "Minor Gaps (10–25%)", value: `${minorCount}`, note: "Suitable for focused micro-learning", color: C.accent },
+          { label: "Priority Focus Areas", value: topPriorityAreas || "None (All Met)", note: "Prioritized in remedial learning roadmap", color: "#1B3D29" },
         ].map((card) => (
           <div
             key={card.label}
@@ -114,44 +193,80 @@ export default function GapAnalysis() {
               background: C.surface,
               border: `1px solid ${C.border}`,
               borderRadius: 12,
-              padding: "20px 24px",
+              padding: "18px 20px",
+              borderTop: `3px solid ${card.color}`,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             }}
           >
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 8 }}>{card.label}</div>
-            <div style={{ fontFamily: FONT.display, fontSize: 28, fontWeight: 700, color: C.dark }}>{card.value}</div>
-            <div style={{ fontSize: 12, color: C.faint, marginTop: 4 }}>{card.note}</div>
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>{card.label}</div>
+            <div style={{ fontFamily: FONT.display, fontSize: 24, fontWeight: 700, color: card.color }}>{card.value}</div>
+            <div style={{ fontSize: 11, color: C.faint, marginTop: 4 }}>{card.note}</div>
           </div>
         ))}
       </div>
 
       {/* Two-column main */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 20, marginBottom: 28 }}>
-        {/* Left column */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.1fr", gap: 20, marginBottom: 28 }}>
+        {/* Left column: Radar & Gap charts */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Radar chart */}
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24 }}>
-            <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, marginBottom: 4, color: C.dark }}>
-              Competency Radar
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+              <div>
+                <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, color: C.dark }}>
+                  Multi-Axis Competency Radar Chart
+                </div>
+                <div style={{ fontSize: 13, color: C.muted }}>
+                  Real-time visualization of Demonstrated Score vs. MoSPI Target Benchmark across 5 FrAC domains
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>Current vs Target scores</div>
+
             {/* Legend */}
-            <div style={{ display: "flex", gap: 20, marginBottom: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                <div style={{ width: 12, height: 12, borderRadius: 2, background: C.accent, opacity: 0.8 }} />
-                <span style={{ color: C.muted }}>Current Score</span>
+            <div style={{ display: "flex", gap: 20, margin: "16px 0 8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                <div style={{ width: 12, height: 12, borderRadius: 2, background: C.accent, opacity: 0.9 }} />
+                <span style={{ color: C.dark, fontWeight: 600 }}>Demonstrated Score (%)</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                <div style={{ width: 12, height: 12, borderRadius: 2, background: C.dark, opacity: 0.6 }} />
-                <span style={{ color: C.muted }}>Target Score</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                <div style={{ width: 12, height: 12, borderRadius: 2, background: "#1B3D29", opacity: 0.4 }} />
+                <span style={{ color: C.dark, fontWeight: 600 }}>MoSPI Role Benchmark (%)</span>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+
+            <ResponsiveContainer width="100%" height={320}>
+              <RadarChart data={radarData} margin={{ top: 15, right: 30, bottom: 15, left: 30 }}>
                 <PolarGrid stroke={C.border} />
-                <PolarAngleAxis dataKey="domain" tick={{ fill: C.muted, fontSize: 12, fontFamily: FONT.body }} />
-                <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar name="Target" dataKey="target" stroke={C.dark} fill={C.dark} fillOpacity={0.1} strokeWidth={1.5} />
-                <Radar name="Current" dataKey="current" stroke={C.accent} fill={C.accent} fillOpacity={0.2} strokeWidth={2} />
+                <PolarAngleAxis
+                  dataKey="domain"
+                  tick={{ fill: C.dark, fontSize: 12, fontFamily: FONT.body, fontWeight: 600 }}
+                />
+                <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10, fill: C.faint }} axisLine={false} />
+                <Radar
+                  name="MoSPI Role Benchmark"
+                  dataKey="target"
+                  stroke="#1B3D29"
+                  fill="#1B3D29"
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                />
+                <Radar
+                  name="Demonstrated Score"
+                  dataKey="current"
+                  stroke={C.accent}
+                  fill={C.accent}
+                  fillOpacity={0.35}
+                  strokeWidth={2.5}
+                />
+                <Tooltip
+                  contentStyle={{
+                    fontFamily: FONT.body,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  formatter={(val, name) => [`${val}%`, name]}
+                />
               </RadarChart>
             </ResponsiveContainer>
           </div>
@@ -159,17 +274,24 @@ export default function GapAnalysis() {
           {/* Bar chart: gap size */}
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24 }}>
             <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, marginBottom: 4, color: C.dark }}>
-              Gap by Domain
+              Measured Competency Gap Variance
             </div>
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>Points needed to reach target</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={gapBarData} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 80 }}>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>
+              Deficit percentage required to satisfy official job role requirements
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={gapBarData} layout="vertical" margin={{ top: 0, right: 24, bottom: 0, left: 100 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
-                <XAxis type="number" domain={[0, 60]} tick={{ fontSize: 12, fill: C.muted, fontFamily: FONT.body }} />
-                <YAxis type="category" dataKey="domain" tick={{ fontSize: 13, fill: C.dark, fontFamily: FONT.body }} width={80} />
+                <XAxis type="number" domain={[0, 60]} tick={{ fontSize: 11, fill: C.muted, fontFamily: FONT.body }} />
+                <YAxis
+                  type="category"
+                  dataKey="short"
+                  tick={{ fontSize: 12, fill: C.dark, fontFamily: FONT.body, fontWeight: 500 }}
+                  width={100}
+                />
                 <Tooltip
-                  formatter={(val: any) => [`${val} pts gap`, "Gap"]}
-                  contentStyle={{ fontFamily: FONT.body, border: `1px solid ${C.border}`, borderRadius: 8 }}
+                  formatter={(val: any) => [`${val}% Gap Deficit`, "Variance"]}
+                  contentStyle={{ fontFamily: FONT.body, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12 }}
                 />
                 <Bar dataKey="gap" radius={[0, 4, 4, 0]}>
                   {gapBarData.map((entry) => (
@@ -181,26 +303,36 @@ export default function GapAnalysis() {
           </div>
         </div>
 
-        {/* Right column */}
+        {/* Right column: Gap Matrix Table & AI Priority Order */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {/* Gap Severity table */}
+          {/* Gap Severity Matrix Table */}
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24 }}>
-            <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, marginBottom: 16, color: C.dark }}>
-              Gap Severity
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div>
+                <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, color: C.dark }}>
+                  MoSPI Gap Matrix Table
+                </div>
+                <div style={{ fontSize: 12, color: C.muted }}>Standardized FrAC competency breakdown</div>
+              </div>
+              <span style={{ fontSize: 11, color: C.muted }}>Ranked by Deficit</span>
             </div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
               <thead>
                 <tr>
-                  {["Domain", "Now", "Target", "Gap", "Severity"].map((h) => (
+                  {["Domain", "Score", "Benchmark", "Gap", "Severity"].map((h) => (
                     <th
                       key={h}
                       style={{
                         textAlign: "left",
-                        padding: "6px 8px",
+                        padding: "8px 6px",
                         color: C.faint,
                         fontWeight: 600,
                         borderBottom: `1px solid ${C.border}`,
                         whiteSpace: "nowrap",
+                        fontSize: 11,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
                       }}
                     >
                       {h}
@@ -209,13 +341,18 @@ export default function GapAnalysis() {
                 </tr>
               </thead>
               <tbody>
-                {tableRows.map((row, i) => (
-                  <tr key={row.domain} style={{ background: i % 2 === 0 ? "transparent" : "#F5F1E8" }}>
-                    <td style={{ padding: "8px 8px", color: C.dark, fontWeight: 500 }}>{row.domain}</td>
-                    <td style={{ padding: "8px 8px", color: C.muted }}>{row.current}</td>
-                    <td style={{ padding: "8px 8px", color: C.muted }}>{row.target}</td>
-                    <td style={{ padding: "8px 8px", fontWeight: 700, color: C.dark }}>{row.gap}</td>
-                    <td style={{ padding: "8px 8px" }}>
+                {gapMetrics.map((row, i) => (
+                  <tr key={row.domainId} style={{ background: i % 2 === 0 ? "transparent" : "#F5F1E888" }}>
+                    <td style={{ padding: "10px 6px", color: C.dark, fontWeight: 600 }}>
+                      <div>{row.domain}</div>
+                      <div style={{ fontSize: 10.5, color: C.muted, fontWeight: 400 }}>Rank #{row.priorityRank}</div>
+                    </td>
+                    <td style={{ padding: "10px 6px", color: C.dark }}>{row.current}%</td>
+                    <td style={{ padding: "10px 6px", color: C.muted }}>{row.target}%</td>
+                    <td style={{ padding: "10px 6px", fontWeight: 700, color: gapColor(row.gap) }}>
+                      {row.gap > 0 ? `-${row.gap}%` : "Met"}
+                    </td>
+                    <td style={{ padding: "10px 6px" }}>
                       <span
                         style={{
                           ...severityStyle(row.severity),
@@ -223,6 +360,7 @@ export default function GapAnalysis() {
                           borderRadius: 20,
                           fontSize: 11,
                           fontWeight: 700,
+                          whiteSpace: "nowrap",
                         }}
                       >
                         {row.severity}
@@ -234,47 +372,61 @@ export default function GapAnalysis() {
             </table>
           </div>
 
-          {/* AI Priority Order */}
+          {/* AI Priority Remediation Sequence */}
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24 }}>
             <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, marginBottom: 4, color: C.dark }}>
-              AI Priority Order
+              AI Prescribed Remediation Sequence
             </div>
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>What to work on first</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {priorityOrder.map((item) => (
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>
+              Targeted remediation actions automatically generated by the gap engine
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {gapMetrics.slice(0, 4).map((item) => (
                 <div
-                  key={item.rank}
+                  key={item.domainId}
                   style={{
                     display: "flex",
                     gap: 12,
                     alignItems: "flex-start",
-                    padding: "12px",
+                    padding: "12px 14px",
                     background: C.bg,
                     borderRadius: 8,
-                    border: `1px solid ${C.border}`,
+                    border: `1px solid ${item.severity === "Critical" ? C.s4 + "44" : C.border}`,
                   }}
                 >
                   <div
                     style={{
-                      width: 26,
-                      height: 26,
+                      width: 24,
+                      height: 24,
                       borderRadius: "50%",
-                      background: C.accent,
+                      background: item.severity === "Critical" ? C.s4 : C.accent,
                       color: "#fff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: 700,
                       flexShrink: 0,
                     }}
                   >
-                    {item.rank}
+                    {item.priorityRank}
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: C.dark, marginBottom: 2 }}>{item.area}</div>
-                    <div style={{ fontSize: 12, color: C.muted, marginBottom: 4 }}>{item.action}</div>
-                    <div style={{ fontSize: 12, color: C.faint }}>~{item.weeks} weeks</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontWeight: 700, fontSize: 13, color: C.dark }}>{item.domain}</span>
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          color: item.severity === "Critical" ? C.s4 : C.accent,
+                        }}
+                      >
+                        {item.gap > 0 ? `${item.gap}% Gap` : "Satisfied"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
+                      {item.action}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -283,7 +435,7 @@ export default function GapAnalysis() {
         </div>
       </div>
 
-      {/* AI Recommendations */}
+      {/* AI Recommendations (Course Feed Mapped to Gaps) */}
       <div
         style={{
           background: C.surface,
@@ -293,69 +445,117 @@ export default function GapAnalysis() {
           marginBottom: 28,
         }}
       >
-        <div style={{ fontFamily: FONT.display, fontSize: 18, fontWeight: 700, marginBottom: 4, color: C.dark }}>
-          AI Recommendations
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontFamily: FONT.display, fontSize: 18, fontWeight: 700, color: C.dark }}>
+              Curated Remedial Courses (iGOT & NSSTA Integration)
+            </div>
+            <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>
+              Courses prioritized dynamically to bridge your measured critical competency deficits first
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/student/courses")}
+            style={{
+              padding: "7px 14px",
+              background: "transparent",
+              border: `1px solid ${C.border}`,
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              color: C.dark,
+              cursor: "pointer",
+            }}
+          >
+            Explore Full Catalog (20+ Courses) →
+          </button>
         </div>
-        <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>
-          Courses curated to close your identified gaps
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          {courseRecs.map((c) => (
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          {prioritizedCourses.slice(0, 3).map((c) => (
             <div
-              key={c.title}
+              key={c.courseCode}
               style={{
                 background: C.bg,
-                border: `1px solid ${C.border}`,
+                border: `1px solid ${c.severity === "Critical" ? C.s4 + "55" : C.border}`,
                 borderRadius: 10,
-                padding: 18,
+                padding: "18px 20px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 8,
+                gap: 10,
+                position: "relative",
               }}
             >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: "#fff",
+                    background: "#1B3D29",
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                  }}
+                >
+                  {c.provider}
+                </span>
+                <span style={{ fontSize: 11, color: C.muted, fontFamily: FONT.mono }}>
+                  {c.courseCode}
+                </span>
+              </div>
+
+              <div style={{ fontWeight: 700, fontSize: 14, color: C.dark, lineHeight: 1.4 }}>
+                {c.title}
+              </div>
+
+              <div style={{ fontSize: 12, color: C.muted }}>
+                Duration: <strong>{c.duration}</strong> · Addresses: <strong>{c.gap}</strong>
+              </div>
+
               <div
                 style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: c.source === "Core" ? C.s3 : C.s1,
-                  background: c.source === "Core" ? "#E0F4F2" : "#E6F4EC",
-                  padding: "2px 8px",
-                  borderRadius: 20,
-                  width: "fit-content",
+                  padding: "6px 10px",
+                  background: c.severity === "Critical" ? "#FDECEA" : "#FEF3E2",
+                  borderRadius: 6,
+                  fontSize: 11.5,
+                  color: c.severity === "Critical" ? C.s4 : C.accent,
+                  fontWeight: 600,
                 }}
               >
-                {c.source}
+                🎯 Bridges your {c.gapPoints}% measured competency gap
               </div>
-              <div style={{ fontWeight: 600, fontSize: 14, color: C.dark, lineHeight: 1.4 }}>{c.title}</div>
-              <div style={{ fontSize: 12, color: C.muted }}>{c.duration} · {c.gap}</div>
+
               <button
+                onClick={() => navigate("/student/courses")}
                 style={{
-                  marginTop: 8,
-                  padding: "8px 0",
+                  marginTop: "auto",
+                  padding: "9px 0",
                   background: C.accent,
                   color: "#fff",
                   border: "none",
                   borderRadius: 7,
                   fontFamily: FONT.body,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: 13,
                   cursor: "pointer",
+                  textAlign: "center",
+                  boxShadow: "0 2px 6px rgba(198, 133, 27, 0.2)",
                 }}
               >
-                Enroll →
+                Enroll & Begin Module →
               </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Bottom CTA */}
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      {/* Bottom CTA to Sequenced Roadmap */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
         <button
           onClick={() => navigate("/student/learning-path")}
           style={{
-            padding: "13px 36px",
-            background: C.accent,
+            padding: "14px 40px",
+            background: "#1B3D29",
             color: "#fff",
             border: "none",
             borderRadius: 9,
@@ -363,9 +563,10 @@ export default function GapAnalysis() {
             fontWeight: 700,
             fontSize: 16,
             cursor: "pointer",
+            boxShadow: "0 4px 14px rgba(27, 61, 41, 0.3)",
           }}
         >
-          Start Learning Path →
+          View 4-Phase Personalized Roadmap →
         </button>
       </div>
     </div>

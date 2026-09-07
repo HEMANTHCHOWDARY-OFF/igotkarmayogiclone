@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import {
   BarChart,
   Bar,
@@ -10,41 +10,12 @@ import {
   Cell,
 } from "recharts";
 import { C, FONT } from "@/tokens";
-
-const domainScores = [
-  { domain: "Digital", short: "Digital", score: 45 },
-  { domain: "Ethics", short: "Ethics", score: 90 },
-  { domain: "Leadership", short: "Lead.", score: 75 },
-  { domain: "Policy", short: "Policy", score: 80 },
-  { domain: "Technical", short: "Tech.", score: 60 },
-  { domain: "Domain Knowledge", short: "Domain", score: 85 },
-];
-
-const wrongAnswers = [
-  {
-    id: 1,
-    domain: "Digital",
-    question: "Which of the following is a feature of India's DigiLocker?",
-    yourAnswer: "Physical document archive",
-    correctAnswer: "Cloud storage for personal documents",
-    explanation:
-      "DigiLocker is a cloud-based platform under the Digital India initiative that provides citizens with a secure cloud storage space for storing and sharing official documents issued by government agencies.",
-  },
-  {
-    id: 2,
-    domain: "Technical",
-    question: "Which Indian IT Act section deals with electronic signatures?",
-    yourAnswer: "Section 43",
-    correctAnswer: "Section 5",
-    explanation:
-      "Section 5 of the Information Technology Act, 2000 gives legal recognition to electronic signatures, making them equivalent to handwritten signatures for the purposes of authentication.",
-  },
-];
+import { useCompetency } from "@/context/CompetencyContext";
 
 function domainColor(score: number) {
-  if (score >= 80) return C.s1;
-  if (score >= 60) return C.s2;
-  return C.s4;
+  if (score >= 80) return C.s1; // Green
+  if (score >= 60) return C.s2; // Amber/Gold
+  return C.s4; // Red/Coral
 }
 
 const card: React.CSSProperties = {
@@ -56,19 +27,57 @@ const card: React.CSSProperties = {
 
 export default function AssessmentResults() {
   const navigate = useNavigate();
-  const date = new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const { domains, lastAssessment, diagnosticQuestions } = useCompetency();
+
+  const date = lastAssessment?.date
+    ? new Date(lastAssessment.date).toLocaleDateString("en-IN", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : new Date().toLocaleDateString("en-IN", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+  const totalScore = lastAssessment?.score ?? 70;
+  const correctCount = lastAssessment?.correctAnswers ?? 7;
+  const totalCount = lastAssessment?.totalQuestions ?? diagnosticQuestions.length;
+  const timeTakenSec = lastAssessment?.timeTakenSeconds ?? 480;
+
+  const fmtMinSec = (secs: number) => {
+    const m = Math.floor(secs / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (secs % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  // Domain scores for BarChart
+  const domainChartData = domains.map((d) => ({
+    domain: d.name,
+    short: d.short,
+    score: d.currentScore,
+    target: d.targetBenchmark,
+  }));
+
+  // Identify lowest domain and highest domain
+  const sortedDomains = [...domains].sort((a, b) => a.currentScore - b.currentScore);
+  const lowestDomain = sortedDomains[0];
+  const highestDomain = sortedDomains[sortedDomains.length - 1];
 
   const stats = [
-    { label: "Score", value: "76 / 100", color: C.s2 },
-    { label: "Questions Correct", value: "8 / 10", color: C.s1 },
-    { label: "Time Taken", value: "14:32", color: C.s3 },
-    { label: "Rank", value: "Top 23%", color: C.dark },
+    { label: "Overall Score", value: `${totalScore}%`, color: totalScore >= 75 ? C.s1 : totalScore >= 60 ? C.s2 : C.s4 },
+    { label: "Correct Answers", value: `${correctCount} / ${totalCount}`, color: C.s1 },
+    { label: "Time Taken", value: fmtMinSec(timeTakenSec), color: C.s3 },
+    { label: "National Percentile", value: totalScore >= 80 ? "Top 12%" : totalScore >= 65 ? "Top 28%" : "Top 45%", color: C.dark },
   ];
+
+  // User answers map
+  const userAnswers = lastAssessment?.userAnswers || [];
 
   return (
     <div style={{ fontFamily: FONT.body, color: C.dark }}>
@@ -80,8 +89,9 @@ export default function AssessmentResults() {
           alignItems: "center",
           gap: 32,
           marginBottom: 24,
-          background: C.dark,
+          background: "#1B3D29",
           border: "none",
+          boxShadow: "0 6px 20px rgba(27, 61, 41, 0.2)",
         }}
       >
         {/* Score circle */}
@@ -104,7 +114,7 @@ export default function AssessmentResults() {
               cy="55"
               r="46"
               fill="none"
-              stroke={C.s1 + "44"}
+              stroke="#ffffff25"
               strokeWidth="8"
             />
             <circle
@@ -112,11 +122,11 @@ export default function AssessmentResults() {
               cy="55"
               r="46"
               fill="none"
-              stroke={C.s1}
+              stroke={C.accent}
               strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 46}`}
-              strokeDashoffset={`${2 * Math.PI * 46 * (1 - 0.76)}`}
+              strokeDashoffset={`${2 * Math.PI * 46 * (1 - totalScore / 100)}`}
               style={{ transition: "stroke-dashoffset 1s ease" }}
             />
           </svg>
@@ -133,35 +143,50 @@ export default function AssessmentResults() {
             <span
               style={{
                 fontFamily: FONT.display,
-                fontSize: 24,
+                fontSize: 26,
                 fontWeight: 800,
                 color: C.accent,
               }}
             >
-              76%
+              {totalScore}%
             </span>
           </div>
         </div>
 
         {/* Text */}
-        <div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                background: C.accent,
+                color: "#1B3D29",
+                padding: "2px 8px",
+                borderRadius: 4,
+                textTransform: "uppercase",
+              }}
+            >
+              Diagnostic Complete
+            </span>
+            <span style={{ fontSize: 12, color: "#D4E8D8" }}>{date}</span>
+          </div>
+
           <div
             style={{
               fontFamily: FONT.display,
               fontSize: 22,
               fontWeight: 700,
               color: "#fff",
-              marginBottom: 4,
+              marginBottom: 6,
             }}
           >
-            Assessment Complete! 🎉
-          </div>
-          <div style={{ fontSize: 13, color: C.faint, marginBottom: 8 }}>
-            {date}
+            MoSPI FrAC Baseline Evaluated! 🎯
           </div>
           <div style={{ fontSize: 13.5, color: "#D4E8D8", lineHeight: 1.6 }}>
-            You performed well overall. Focus on <strong style={{ color: C.accent }}>Digital</strong> and{" "}
-            <strong style={{ color: C.accent }}>Technical</strong> domains to boost your score.
+            Your baseline scores have been dynamically updated in your profile. Highest demonstrated proficiency is in{" "}
+            <strong style={{ color: "#fff" }}>{highestDomain?.name} ({highestDomain?.currentScore}%)</strong>. Critical remediation recommended for{" "}
+            <strong style={{ color: C.accent }}>{lowestDomain?.name} ({lowestDomain?.currentScore}%)</strong>.
           </div>
         </div>
       </div>
@@ -198,7 +223,7 @@ export default function AssessmentResults() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "1.1fr 0.9fr",
           gap: 20,
           marginBottom: 24,
         }}
@@ -207,18 +232,28 @@ export default function AssessmentResults() {
         <div style={card}>
           <div
             style={{
-              fontFamily: FONT.display,
-              fontSize: 15,
-              fontWeight: 600,
-              marginBottom: 18,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
             }}
           >
-            Domain Breakdown
+            <div
+              style={{
+                fontFamily: FONT.display,
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              MoSPI FrAC Domain Proficiency Breakdown
+            </div>
+            <span style={{ fontSize: 11, color: C.muted }}>5 Core Domains</span>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
+
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart
-              data={domainScores}
-              margin={{ top: 0, right: 8, left: -24, bottom: 0 }}
+              data={domainChartData}
+              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
               <XAxis
@@ -241,10 +276,10 @@ export default function AssessmentResults() {
                   fontFamily: FONT.body,
                   fontSize: 12,
                 }}
-                formatter={(v) => [`${v}%`, "Score"]}
+                formatter={(v, name) => [`${v}%`, name === "score" ? "Demonstrated Score" : "Target Benchmark"]}
               />
-              <Bar dataKey="score" radius={[4, 4, 0, 0]}>
-                {domainScores.map((d) => (
+              <Bar dataKey="score" name="Demonstrated Score" radius={[4, 4, 0, 0]}>
+                {domainChartData.map((d) => (
                   <Cell key={d.domain} fill={domainColor(d.score)} />
                 ))}
               </Bar>
@@ -261,9 +296,9 @@ export default function AssessmentResults() {
             }}
           >
             {[
-              { label: "≥ 80% Strong", color: C.s1 },
-              { label: "60–79% Moderate", color: C.s2 },
-              { label: "< 60% Needs Work", color: C.s4 },
+              { label: "≥ 80% Benchmark Met", color: C.s1 },
+              { label: "60–79% Moderate Competency", color: C.s2 },
+              { label: "< 60% Critical Remediation Required", color: C.s4 },
             ].map((l) => (
               <div
                 key={l.label}
@@ -288,25 +323,36 @@ export default function AssessmentResults() {
               marginTop: 18,
               display: "flex",
               flexDirection: "column",
-              gap: 8,
+              gap: 10,
             }}
           >
-            {domainScores.map((d) => (
+            {domains.map((d) => (
               <div
-                key={d.domain}
+                key={d.id}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 10,
+                  gap: 12,
                 }}
               >
-                <div style={{ width: 110, fontSize: 12, color: C.muted }}>
-                  {d.domain}
+                <div
+                  style={{
+                    width: 170,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: C.dark,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                  title={d.name}
+                >
+                  {d.name}
                 </div>
                 <div
                   style={{
                     flex: 1,
-                    height: 5,
+                    height: 6,
                     background: C.border,
                     borderRadius: 99,
                     overflow: "hidden",
@@ -315,22 +361,22 @@ export default function AssessmentResults() {
                   <div
                     style={{
                       height: "100%",
-                      width: `${d.score}%`,
-                      background: domainColor(d.score),
+                      width: `${d.currentScore}%`,
+                      background: domainColor(d.currentScore),
                       borderRadius: 99,
                     }}
                   />
                 </div>
                 <div
                   style={{
-                    width: 34,
+                    width: 60,
                     textAlign: "right",
                     fontSize: 12,
-                    fontWeight: 600,
-                    color: domainColor(d.score),
+                    fontWeight: 700,
+                    color: domainColor(d.currentScore),
                   }}
                 >
-                  {d.score}%
+                  {d.currentScore}% <span style={{ fontSize: 10, color: C.muted }}>({d.targetBenchmark}%)</span>
                 </div>
               </div>
             ))}
@@ -344,56 +390,60 @@ export default function AssessmentResults() {
               style={{
                 fontFamily: FONT.display,
                 fontSize: 15,
-                fontWeight: 600,
+                fontWeight: 700,
                 marginBottom: 14,
               }}
             >
-              What This Means For You
+              Automated Competency Insights
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                {
-                  icon: "⚠️",
-                  text: "Your Digital domain score (45%) is significantly below threshold. Prioritise e-Governance fundamentals, DigiLocker, and UMANG platform modules immediately.",
-                  color: C.s4,
-                },
-                {
-                  icon: "🔧",
-                  text: "Technical competency (60%) needs attention — revisit the IT Act provisions and electronic records framework for stronger foundational knowledge.",
-                  color: C.s2,
-                },
-                {
-                  icon: "✅",
-                  text: "Excellent performance in Ethics (90%) and Domain Knowledge (85%) — your grounding in constitutional provisions and public service values is strong.",
-                  color: C.s1,
-                },
-              ].map((ins, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    padding: "12px 14px",
-                    background: ins.color + "0F",
-                    borderRadius: 10,
-                    borderLeft: `3px solid ${ins.color}`,
-                  }}
-                >
-                  <span style={{ fontSize: 16, flexShrink: 0 }}>
-                    {ins.icon}
-                  </span>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: 12.5,
-                      lineHeight: 1.6,
-                      color: C.dark,
-                    }}
-                  >
-                    {ins.text}
-                  </p>
-                </div>
-              ))}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  padding: "12px 14px",
+                  background: C.s4 + "0F",
+                  borderRadius: 10,
+                  borderLeft: `3px solid ${C.s4}`,
+                }}
+              >
+                <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+                <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: C.dark }}>
+                  <strong>Critical Gap Detected:</strong> Your score in <em>{lowestDomain?.name}</em> ({lowestDomain?.currentScore}%) falls {lowestDomain ? Math.max(0, lowestDomain.targetBenchmark - lowestDomain.currentScore) : 0}% below the MoSPI Statistical Officer requirement.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  padding: "12px 14px",
+                  background: C.s1 + "0F",
+                  borderRadius: 10,
+                  borderLeft: `3px solid ${C.s1}`,
+                }}
+              >
+                <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>
+                <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: C.dark }}>
+                  <strong>Strong Foundation:</strong> Demonstrated high baseline in <em>{highestDomain?.name}</em> ({highestDomain?.currentScore}%). Ready for advanced operational deployment.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  padding: "12px 14px",
+                  background: C.s2 + "0F",
+                  borderRadius: 10,
+                  borderLeft: `3px solid ${C.s2}`,
+                }}
+              >
+                <span style={{ fontSize: 16, flexShrink: 0 }}>🎯</span>
+                <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: C.dark }}>
+                  <strong>Closed-Loop Learning Path Activated:</strong> Your personalized remedial curriculum has been configured in the AI Gap Matrix.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -409,19 +459,16 @@ export default function AssessmentResults() {
               onClick={() => navigate("/student/gap-analysis")}
               style={{
                 padding: "16px 14px",
-                background: C.dark,
+                background: "#1B3D29",
                 border: "none",
                 borderRadius: 12,
                 cursor: "pointer",
                 textAlign: "left",
                 fontFamily: FONT.body,
+                boxShadow: "0 4px 12px rgba(27, 61, 41, 0.2)",
               }}
             >
-              <div
-                style={{ fontSize: 18, marginBottom: 6 }}
-              >
-                📊
-              </div>
+              <div style={{ fontSize: 20, marginBottom: 6 }}>📊</div>
               <div
                 style={{
                   fontFamily: FONT.display,
@@ -434,9 +481,10 @@ export default function AssessmentResults() {
                 View Gap Analysis
               </div>
               <div style={{ fontSize: 11, color: C.faint }}>
-                Detailed breakdown →
+                Interactive Radar Chart →
               </div>
             </button>
+
             <button
               onClick={() => navigate("/student/learning-path")}
               style={{
@@ -447,13 +495,10 @@ export default function AssessmentResults() {
                 cursor: "pointer",
                 textAlign: "left",
                 fontFamily: FONT.body,
+                boxShadow: "0 4px 12px rgba(198, 133, 27, 0.25)",
               }}
             >
-              <div
-                style={{ fontSize: 18, marginBottom: 6 }}
-              >
-                🗺️
-              </div>
+              <div style={{ fontSize: 20, marginBottom: 6 }}>🗺️</div>
               <div
                 style={{
                   fontFamily: FONT.display,
@@ -463,174 +508,225 @@ export default function AssessmentResults() {
                   marginBottom: 2,
                 }}
               >
-                Start Learning Path
+                Start Remedial Path
               </div>
-              <div style={{ fontSize: 11, color: "#fff9" }}>
-                Personalized plan →
+              <div style={{ fontSize: 11, color: "#fffa" }}>
+                4-Phase Sequenced Plan →
               </div>
             </button>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <Link
+              to="/student/assessment"
+              style={{
+                fontSize: 12,
+                color: C.muted,
+                textDecoration: "underline",
+                padding: "4px 8px",
+              }}
+            >
+              ↻ Re-take Diagnostic Assessment
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Wrong answers review */}
+      {/* Complete Question Review with Exact Verifiable Citations */}
       <div style={card}>
         <div
           style={{
-            fontFamily: FONT.display,
-            fontSize: 15,
-            fontWeight: 600,
-            marginBottom: 18,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20,
           }}
         >
-          Review Incorrect Answers
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {wrongAnswers.map((w) => (
+          <div>
             <div
-              key={w.id}
               style={{
-                background: C.bg,
-                border: `1px solid ${C.border}`,
-                borderRadius: 12,
-                padding: "16px 18px",
+                fontFamily: FONT.display,
+                fontSize: 16,
+                fontWeight: 700,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 10,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: "#fff",
-                    background: C.s4,
-                    padding: "2px 9px",
-                    borderRadius: 99,
-                  }}
-                >
-                  {w.domain}
-                </span>
-                <span style={{ fontSize: 11, color: C.faint }}>
-                  Question {w.id}
-                </span>
-              </div>
+              Detailed Question Evaluation & Source Citations
+            </div>
+            <p style={{ margin: "3px 0 0", fontSize: 12, color: C.muted }}>
+              Every question is verified against official MoSPI manuals, DPDP Act statutory guidelines, and NSSTA reference texts.
+            </p>
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 600, color: C.s1 }}>
+            {correctCount} / {totalCount} Correct ({totalScore}%)
+          </span>
+        </div>
 
-              <p
-                style={{
-                  margin: "0 0 12px",
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  lineHeight: 1.5,
-                }}
-              >
-                {w.question}
-              </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {diagnosticQuestions.map((q, idx) => {
+            const userAnsIdx = userAnswers[idx];
+            const isCorrect = userAnsIdx === q.correct;
+            const isAnswered = userAnsIdx !== null && userAnsIdx !== undefined;
 
+            return (
               <div
+                key={q.id}
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                  marginBottom: 12,
+                  background: C.bg,
+                  border: `1px solid ${isCorrect ? C.s1 + "55" : C.s4 + "55"}`,
+                  borderRadius: 12,
+                  padding: "18px 20px",
                 }}
               >
+                {/* Badge Row */}
                 <div
                   style={{
                     display: "flex",
-                    alignItems: "flex-start",
-                    gap: 8,
-                    padding: "8px 12px",
-                    background: C.s4 + "15",
-                    borderRadius: 8,
-                    borderLeft: `3px solid ${C.s4}`,
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 10,
                   }}
                 >
-                  <span style={{ fontSize: 13, flexShrink: 0 }}>✗</span>
-                  <div>
-                    <div
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span
                       style={{
                         fontSize: 11,
-                        color: C.s4,
-                        fontWeight: 600,
-                        marginBottom: 1,
+                        fontWeight: 700,
+                        color: "#fff",
+                        background: isCorrect ? C.s1 : C.s4,
+                        padding: "2px 10px",
+                        borderRadius: 99,
                       }}
                     >
-                      Your Answer
-                    </div>
-                    <div style={{ fontSize: 12.5, color: C.dark }}>
-                      {w.yourAnswer}
-                    </div>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 8,
-                    padding: "8px 12px",
-                    background: C.s1 + "15",
-                    borderRadius: 8,
-                    borderLeft: `3px solid ${C.s1}`,
-                  }}
-                >
-                  <span style={{ fontSize: 13, flexShrink: 0 }}>✓</span>
-                  <div>
-                    <div
+                      {isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                    </span>
+                    <span
                       style={{
                         fontSize: 11,
-                        color: C.s1,
                         fontWeight: 600,
-                        marginBottom: 1,
+                        color: C.dark,
+                        background: C.surface,
+                        border: `1px solid ${C.border}`,
+                        padding: "2px 8px",
+                        borderRadius: 4,
                       }}
                     >
-                      Correct Answer
-                    </div>
-                    <div style={{ fontSize: 12.5, color: C.dark }}>
-                      {w.correctAnswer}
-                    </div>
+                      {q.domain}
+                    </span>
                   </div>
-                </div>
-              </div>
 
-              <div
-                style={{
-                  padding: "10px 12px",
-                  background: C.surface,
-                  borderRadius: 8,
-                  border: `1px solid ${C.border}`,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: C.muted,
-                    marginBottom: 4,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                  }}
-                >
-                  Explanation
+                  <span style={{ fontSize: 12, color: C.faint }}>
+                    Question {idx + 1} of {diagnosticQuestions.length}
+                  </span>
                 </div>
+
+                {/* Question Text */}
                 <p
                   style={{
-                    margin: 0,
-                    fontSize: 12.5,
+                    margin: "0 0 14px",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    lineHeight: 1.5,
                     color: C.dark,
-                    lineHeight: 1.6,
                   }}
                 >
-                  {w.explanation}
+                  {q.text}
                 </p>
+
+                {/* Answer Summary */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: isCorrect ? "1fr" : "1fr 1fr",
+                    gap: 10,
+                    marginBottom: 14,
+                  }}
+                >
+                  {!isCorrect && (
+                    <div
+                      style={{
+                        padding: "8px 12px",
+                        background: C.s4 + "12",
+                        borderRadius: 8,
+                        borderLeft: `3px solid ${C.s4}`,
+                      }}
+                    >
+                      <div style={{ fontSize: 11, color: C.s4, fontWeight: 700 }}>
+                        Your Choice:
+                      </div>
+                      <div style={{ fontSize: 13, color: C.dark, marginTop: 2 }}>
+                        {isAnswered && userAnsIdx !== null ? `${String.fromCharCode(65 + userAnsIdx)}. ${q.options[userAnsIdx]}` : "Unanswered"}
+                      </div>
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      padding: "8px 12px",
+                      background: C.s1 + "12",
+                      borderRadius: 8,
+                      borderLeft: `3px solid ${C.s1}`,
+                    }}
+                  >
+                    <div style={{ fontSize: 11, color: C.s1, fontWeight: 700 }}>
+                      Correct Option:
+                    </div>
+                    <div style={{ fontSize: 13, color: C.dark, marginTop: 2 }}>
+                      {String.fromCharCode(65 + q.correct)}. {q.options[q.correct]}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Explanatory Rationale */}
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    background: C.surface,
+                    borderRadius: 8,
+                    border: `1px solid ${C.border}`,
+                    marginBottom: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: C.muted,
+                      marginBottom: 3,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    Explanatory Rationale
+                  </div>
+                  <p style={{ margin: 0, fontSize: 12.5, color: C.dark, lineHeight: 1.6 }}>
+                    {q.explanation}
+                  </p>
+                </div>
+
+                {/* Verifiable Citation Box */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 12px",
+                    background: "#F5F1E6",
+                    borderRadius: 6,
+                    border: "1px dashed #C6851B",
+                    fontSize: 11.5,
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>📖</span>
+                  <span style={{ fontWeight: 700, color: "#8C3B17" }}>Verifiable Citation:</span>
+                  <span style={{ color: C.dark, fontWeight: 600 }}>{q.citation.documentName}</span>
+                  <span style={{ color: C.muted }}>•</span>
+                  <span style={{ color: C.muted }}>{q.citation.chapter}</span>
+                  <span style={{ color: C.muted }}>•</span>
+                  <span style={{ color: "#1B3D29", fontWeight: 600 }}>{q.citation.page}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

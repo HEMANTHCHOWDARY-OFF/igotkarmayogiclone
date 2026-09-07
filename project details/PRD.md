@@ -50,6 +50,23 @@ System (LMS). Its differentiating capability is **competency
 measurement + gap analysis + personalized remediation + continuous
 validation**.
 
+### 1.3 Core MVP Features (Authoritative Contract)
+
+For the Smart India Hackathon prototype, development is strictly focused on the **11 Core MVP Features** detailed in `MVP_FEATURES.md`:
+1. **User Authentication & Profiles**
+2. **Competency Assessment**
+3. **AI Competency Gap Analysis**
+4. **Upload Learning Materials (PDF/DOC)**
+5. **AI-Generated MCQs (With Citations)**
+6. **Quiz Taking**
+7. **Automatic Evaluation**
+8. **Personalized Course Recommendations**
+9. **iGOT Course / Resource Mapping (Mock Only)**
+10. **Learner Progress Dashboard**
+11. **Learning Paths / Roadmaps**
+
+All other capabilities are secondary or post-MVP extensions.
+
 ------------------------------------------------------------------------
 
 # 2. Problem Statement

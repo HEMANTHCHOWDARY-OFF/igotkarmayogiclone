@@ -71,48 +71,55 @@ Aligned with the **Smart India Hackathon (SIH) 2026 Problem Statement SIH26101**
 
 ---
 
-## 3. Core MVP Scope vs Full Scope
+## 3. Core MVP Scope (The 11 Core Features)
 
-| Feature Area | MVP Implementation | Full Production Vision |
-| :--- | :--- | :--- |
-| **Authentication** | Demo Role Switcher + Mock Parichay SSO | Production Parichay / NIC OAuth2 Gateway |
-| **Competency Model** | Core FrAC Taxonomy (5 Major Statistical Roles) | Full MoSPI Cadre Hierarchy (ISS, SSS, Contractual) |
-| **AI Assessment** | Upload PDF/Doc + Generate MCQs with Citations | Multi-document cross-synthesis + Video transcript parsing |
-| **Course Catalog** | Mock iGOT & NSSTA TPAC curated catalog (20+ courses) | Live iGOT Karmayogi API sync & webhook updates |
-| **Quiz Evaluation** | Instant grading, citation verification & score update | Adaptive computerized testing (CAT) engine |
-| **Dashboards** | Interactive Radar Chart, Roadmap & Admin Heatmap | Enterprise regional hierarchy drill-down across all Indian states |
+As established in `MVP_FEATURES.md`, the platform development is strictly focused on 11 high-priority core features for the Smart India Hackathon:
+
+| # | Core MVP Feature | Scope in MVP | Deferred to Full Production |
+| :-: | :--- | :--- | :--- |
+| **1** | **User Authentication & Profiles** | Email/Password, Live Google OAuth, 1-Click Role Switcher, Statistical Cadre metadata | Production Parichay / NIC OAuth2 Enterprise Gateway |
+| **2** | **Competency Assessment** | 5 Core FrAC Domains Diagnostic Test (Sampling, SQL, Python, GIS, Data Ethics) | Full multi-cadre civil service testing suite |
+| **3** | **AI Competency Gap Analysis** | Real-time gap matrix vs role benchmarks + Interactive Competency Radar Chart | Predictive long-term career modeling |
+| **4** | **Upload Learning Materials (PDF/DOC)** | Admin/Faculty manual & guideline document parser | Multi-GB video transcription & OCR handwriting |
+| **5** | **AI-Generated MCQs (With Citations)** | Structured JSON schema, single/multi-choice, verifiable page/section citations | Dynamic cross-manual synthesis |
+| **6** | **Quiz Taking** | Dedicated, responsive student test interface with instant response capture | Live proctoring & lockdown browser |
+| **7** | **Automatic Evaluation** | Instant grading, question-by-question rationales, dynamic competency baseline update | Manual human grading workflow |
+| **8** | **Personalized Course Recommendations** | Gap-weighted course prioritization matching highest measured deficits | Real-time AI retraining on external clickstreams |
+| **9** | **iGOT Course / Resource Mapping** | Curated Mock catalog (20+ courses) with NSSTA / TPAC endorsement badges | Live two-way iGOT Karmayogi API webhook sync |
+| **10** | **Learner Progress Dashboard** | Skill Health Score, weekly competency velocity, upcoming deadlines | National-level multi-state drill-downs |
+| **11** | **Learning Paths / Roadmaps** | Sequenced 4-Phase milestone roadmap based on individual gap severity | Multi-branch dynamic graph re-routing |
 
 ---
 
-## 4. End-to-End Workflow
+## 4. End-to-End Core MVP Workflow
 
 ```
-[ 1. User Authentication & Role Selection ]
+[ 1. User Authentication & Profiles ]
               │
               ▼
-[ 2. Baseline Diagnostic Competency Assessment ]
+[ 2. Competency Assessment (Diagnostic) ]
               │
               ▼
-[ 3. AI Gap Analysis & Radar Chart Generation ]
+[ 3. AI Competency Gap Analysis & Radar Chart ]
               │
               ▼
-[ 4. Prioritization of Critical Gaps vs Target Role ]
+[ 8. Personalized Course Recommendations ]
               │
               ▼
-[ 5. Personalized Path: Curated iGOT & NSSTA TPAC Courses ]
+[ 9. iGOT Course / Resource Mapping (Mock Only) ]
               │
               ▼
-[ 6. Upload Training Materials & Trigger AI Assessment Engine ]
+[ 11. Learning Paths / Roadmaps ]
               │
-              ▼
-[ 7. Human-in-the-Loop Review (Admin/Faculty Approval) ]
-              │
-              ▼
-[ 8. Learner Quiz Execution & Instant Auto-Evaluation ]
-              │
-              ▼
-[ 9. Dynamic Baseline Update & Skill Health Progression ]
-              │
-              ▼
-[ 10. Macro Workforce Heatmap & Predictive Shortage Analytics ]
+   ┌──────────┴──────────┐
+   │                     │
+   ▼                     ▼
+[ 4. Upload Materials ] [ 6. Quiz Taking ]
+   │                     │
+   ▼                     ▼
+[ 5. AI-Generated MCQs] [ 7. Automatic Evaluation ]
+   (With Citations & HITL)  │
+   │                     ▼
+   └───────────────────► [ 10. Learner Progress Dashboard ]
+                         (Dynamic Baseline Update & Skill Health)
 ```

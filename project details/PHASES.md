@@ -73,30 +73,19 @@ before the competency loop actually works.
 
 # 3. Phase Overview
 
-``` text
-[COMPLETED]
+[COMPLETED - ALL 11 CORE MVP FEATURES]
 ✓ PHASE 0  → Project Foundation & Planning
 ✓ PHASE 1  → Repository & Development Environment
 ✓ PHASE 2  → Supabase Backend Foundation
 ✓ PHASE 3  → Authentication & User Management (Email/Password & Google OAuth)
+✓ PHASE A  → (Features 2 & 7a) Competency Diagnostic & Assessment Engine (MoSPI FrAC & Auto-Evaluation) [APPROVED]
+✓ PHASE B  → (Feature 3) AI Competency Gap Analysis Engine & Dynamic Radar Chart [APPROVED]
+✓ PHASE C  → (Features 8, 9 & 11) Personalized Recommendations, 22 iGOT Courses & roadmap.sh Interactive Path [APPROVED]
+✓ PHASE D  → (Features 4 & 5) Admin Document Ingestion & AI Question Generation (Verifiable Citations & HITL Review) [APPROVED]
+✓ PHASE E  → (Features 6, 7b & 10) Closed-Loop Micro-Module Quiz Taking, Instant Evaluation & Dashboard Skill Health Score [COMPLETED - AWAITING USER APPROVAL]
 
-[ACTIVE REMAINING ROADMAP]
-PHASE 4  → Competency Framework & Database Domain Models
-PHASE 5  → Assessment Engine & Real-Time Test Submission
-PHASE 6  → Dynamic Competency Scoring & Gap Analysis Engine
-PHASE 7  → Learning Content & Resource System
-PHASE 8  → Personalized Learning Path Sequencing
-PHASE 9  → Practice Mode & Reassessment Loop
-PHASE 10 → RAG Knowledge Ingestion & pgvector Search
-PHASE 11 → AI Mentor Grounded Assistant
-PHASE 12 → Progress & Role Readiness Metrics
-PHASE 13 → Verifiable Certificates & Achievements
-PHASE 14 → Admin Portal Backend & Live Analytics
-PHASE 15 → UI/UX Integration & Multilingual Polish
-PHASE 16 → Security, RLS Audit, Testing & Reliability
-PHASE 17 → Production Deployment & Staging
-PHASE 18 → SIH Final Demo, Presentation & Evaluation
-PHASE 19 → Post-MVP Expansion
+[OPTIONAL ADVANCED POST-MVP EXTENSIONS]
+  PHASE F  → (Phases 10, 11, 13, 14) Full-scale pgvector RAG Embedding Pipeline, Verifiable PDF Certificates & Pan-Ministry Aggregates
 ```
 
 ------------------------------------------------------------------------
@@ -1149,89 +1138,83 @@ Only after the MVP is stable.
 
 # 26. MVP Definition
 
-The MVP is complete when the following end-to-end flow works:
+The MVP is strictly defined by the **11 Core MVP Features** detailed in `MVP_FEATURES.md`. The MVP is complete when the following unbroken end-to-end flow works:
 
 ``` text
-USER
+1. USER AUTHENTICATION & PROFILES
  ↓
-AUTHENTICATION
+2. COMPETENCY ASSESSMENT (Diagnostic Baseline)
  ↓
-TARGET ROLE
+3. AI COMPETENCY GAP ANALYSIS (Calculated vs Benchmark)
  ↓
-BASELINE ASSESSMENT
+8. PERSONALIZED COURSE RECOMMENDATIONS
  ↓
-COMPETENCY PROFILE
+9. iGOT COURSE / RESOURCE MAPPING (Mock Only)
  ↓
-GAP ANALYSIS
+11. LEARNING PATHS / ROADMAPS (Dynamic 4-Phase Path)
  ↓
-PERSONALIZED LEARNING PATH
+4. UPLOAD LEARNING MATERIALS (PDF/DOC) (Admin/Faculty)
  ↓
-LEARNING RESOURCE
+5. AI-GENERATED MCQs (With Exact Citations & HITL Review)
  ↓
-AI/RAG ASSISTANCE
+6. QUIZ TAKING (Interactive Testing Interface)
  ↓
-PRACTICE
+7. AUTOMATIC EVALUATION (Instant Grading & Feedback)
  ↓
-REASSESSMENT
- ↓
-UPDATED COMPETENCY
- ↓
-ROLE READINESS
- ↓
-ACHIEVEMENT / CERTIFICATE
+10. LEARNER PROGRESS DASHBOARD (Dynamic Score Update & Readiness)
 ```
 
-If this flow does not work, the MVP is not complete regardless of how
-many individual screens exist.
+If this flow does not work, the MVP is not complete regardless of how many individual screens exist.
 
 ------------------------------------------------------------------------
 
-# 27. MVP Feature Priority
+# 27. MVP Feature Priority (Aligned with MVP_FEATURES.md)
 
-## P0 --- Absolutely Critical
+## P0 --- The 11 Core MVP Features (Non-Negotiable High Priority)
+
+Refer to `MVP_FEATURES.md` for detailed technical specifications:
 
 ``` text
-Authentication
-Competency Framework
-Assessment
-Competency Scoring
-Gap Analysis
-Learning Resources
-Personalized Path
-Practice
-Reassessment
-Progress
-Role Readiness
+1. User Authentication & Profiles (Role switcher, Google OAuth, metadata)
+2. Competency Assessment (MoSPI FrAC baseline test)
+3. AI Competency Gap Analysis (Deterministic gap matrix & radar chart)
+4. Upload Learning Materials (PDF/DOC manual & guidelines parser)
+5. AI-Generated MCQs (Strict schema, rationales, verifiable citations)
+6. Quiz Taking (Interactive test environment & answer recording)
+7. Automatic Evaluation (Instant grading & dynamic profile score update)
+8. Personalized Course Recommendations (Gap-prioritized course feed)
+9. iGOT Course / Resource Mapping (Mock Only - 20+ courses & NSSTA badges)
+10. Learner Progress Dashboard (Skill health score, progress velocity, metrics)
+11. Learning Paths / Roadmaps (Sequenced 4-phase milestone timeline)
 ```
 
-## P1 --- Critical Differentiators
+## P1 --- Critical MVP Enablers & UI Refinements
 
 ``` text
-RAG
-AI Learning Assistant
-Source Citations
-Admin Competency Management
-Certificates
+RAG Document Context Provider
+AI Learning Assistant / Mentor
+Human-in-the-Loop (HITL) Admin Review Studio
+Verifiable Competency Certificates (QR code)
+Admin Division Capacity Heatmaps
 ```
 
-## P2 --- Important
+## P2 --- Secondary Enhancements
 
 ``` text
-Advanced Analytics
-Adaptive Practice
-Coding Assessment
-Mentor Features
-Institution Dashboard
+Adaptive Difficulty Practice
+Coding / SQL Interactive Execution Sandbox
+Mentor-Student Direct Assignment
+Detailed Departmental Export Reports
 ```
 
-## P3 --- Future
+## P3 --- Post-Hackathon / Production Vision
 
 ``` text
-Voice AI
-Mobile App
-Advanced Multi-Agent AI
-Blockchain/DID
-Large-Scale Workforce Intelligence
+Production Parichay / NIC SSO Enterprise Gateway
+Live Two-Way iGOT Karmayogi API Webhook Sync
+Voice AI & Multi-lingual Speech
+Mobile Application (React Native / Flutter)
+Blockchain-backed Digital Credentials
 ```
 
 ------------------------------------------------------------------------

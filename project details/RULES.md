@@ -46,12 +46,14 @@ When information conflicts, use this priority:
 
 ``` text
 1. Current code and database migrations
-2. ARCHITECTURE.md
-3. PRD.md
-4. DESIGN.md
-5. CONTEXT.md
-6. RULES.md
-7. Other documentation
+2. MVP_FEATURES.md (Authoritative contract for MVP demo scope)
+3. ARCHITECTURE.md
+4. PRD.md
+5. DESIGN.md
+6. CONTEXT.md
+7. RULES.md
+8. PHASES.md
+9. Other documentation
 ```
 
 However, **documentation must be updated when implementation changes**.
@@ -290,19 +292,37 @@ significant changes:
 ``` text
 1. Read RULES.md
 2. Read CONTEXT.md
-3. Read relevant PRD sections
-4. Read relevant DESIGN sections
-5. Read relevant ARCHITECTURE sections
-6. Inspect existing implementation
-7. Understand Git branch/status
-8. Plan the change
-9. Implement
-10. Test
-11. Update CONTEXT.md
-12. Report changes
+3. Read MVP_FEATURES.md (Check the 11 Core MVP Features & Priorities)
+4. Read relevant PRD sections
+5. Read relevant DESIGN sections
+6. Read relevant ARCHITECTURE sections
+7. Inspect existing implementation
+8. Understand Git branch/status
+9. Plan the change
+10. Implement
+11. Test
+12. Update CONTEXT.md
+13. Report changes
 ```
 
 Do not start coding immediately after opening the repository.
+
+### 9.1 Strict 11 Core MVP Features Rule
+
+The 11 Core MVP Features defined in `MVP_FEATURES.md` hold absolute priority over all secondary, tertiary, or speculative features:
+1. User Authentication & Profiles
+2. Competency Assessment
+3. AI Competency Gap Analysis
+4. Upload Learning Materials (PDF/DOC)
+5. AI-Generated MCQs (With Citations)
+6. Quiz Taking
+7. Automatic Evaluation
+8. Personalized Course Recommendations
+9. iGOT Course / Resource Mapping (Mock Only)
+10. Learner Progress Dashboard
+11. Learning Paths / Roadmaps
+
+No agent may build extraneous features (e.g. voice AI, blockchain, production SSO integrations, external webhooks) before these 11 features are fully functional and verifiable in the demo loop.
 
 ------------------------------------------------------------------------
 
@@ -1453,3 +1473,44 @@ The project must explain real platform mechanics rather than relying on fabricat
 4. **Eliminate Redundant Clutter and Repeated Tags**:
    - Avoid overcrowding hero or feature sections with redundant pill tags or duplicate capability chips that repeat the same concepts across adjacent rows.
    - Keep layouts focused, breathable, and purposeful.
+
+------------------------------------------------------------------------
+
+# 54. Feature Delivery, Expectation & Verification Protocol
+
+Whenever a feature is added, updated, or refactored, the developer or AI coding agent MUST explicitly inform the user what to expect and provide an exact, step-by-step manual testing guide.
+
+Never say "I've added the feature, let me know what you think" without providing concrete expectations and verification steps.
+
+### Mandatory Post-Feature Delivery Checklist:
+
+Every post-feature response and `walkthrough.md` update MUST provide the following four elements:
+
+#### 1. Summary of Changes & Architecture Impact
+- **Files Modified / Created**: Explicit clickable markdown links with file paths.
+- **State & Context Mutations**: Which reactive stores, methods, or `localStorage` keys were created or modified.
+- **Architectural Placement**: How the feature fits into the end-to-end competency loop.
+
+#### 2. What to Expect in the UI & Application Behavior
+The response must detail exactly what the user should observe:
+- **Visual Elements**: Specific headers, metric counter cards, layout grids, charts, badges, and status pills added.
+- **Interactive Transitions**: What happens on click, hover, tab switch, or input (e.g., modals popping up, progress bars animating, drawers sliding out).
+- **Dynamic Data Updates**: How numbers, percentages, gap ranks, or chart points update in response to user actions (e.g. *"Demonstrated score will increase from 45% to 75%, and the Composite Skill Health gauge will increase by +10 points"*).
+
+#### 3. Step-by-Step Manual Testing Instructions (Copy-Paste Recipe)
+Provide clear, numbered instructions that anyone can follow in a browser:
+- **Exact Browser URL**: Full clickable link (e.g., `http://localhost:8443/student/dashboard`).
+- **Sequential Actions**:
+  - `Step 1`: Which page or tab to open first and what starting state to observe.
+  - `Step 2`: Which specific button, card, or input to click or trigger.
+  - `Step 3`: What inputs to enter or select (including whether a "Demo Quick-Fill" button is available for fast evaluation).
+  - `Step 4`: What submit action to perform.
+- **Expected Verification Points**: Clear "Verify that..." statements for each step (e.g., *"Verify that the badge changes to green '● approved' and the pending counter decrements"*).
+- **Closed-Loop Verification**: Instructions on how to navigate to related views (e.g., Dashboard or Gap Analysis) to confirm that the changes propagated across the entire application.
+
+#### 4. Automated Verification & Documentation Synchronization
+- **Compiler Proof**: Confirm that `npm run build` ran with 0 TypeScript/ESLint errors and note build duration.
+- **Route Proof**: Confirm that the target routes return HTTP 200 OK.
+- **Documentation Updated**: Synchronize all 17 sections of `CONTEXT.md`, add the milestone in `MEMORY.md`, and update `PHASES.md`.
+- **User Approval Pause**: Halt execution and await the user's manual review and explicit approval before starting the next feature or phase.
+
