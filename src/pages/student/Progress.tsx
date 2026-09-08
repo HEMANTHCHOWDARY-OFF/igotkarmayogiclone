@@ -57,7 +57,7 @@ const activities = [
   { type: "Course", desc: "Digital Governance Fundamentals — started", date: "Jun 4, 2026", score: "—", icon: "📚" },
   { type: "Quiz", desc: "Ethics & Governance Basics — Module 3 Quiz", date: "Jun 3, 2026", score: "88%", icon: "✏️" },
   { type: "Badge", desc: "Earned: Communication Achiever badge", date: "Jun 2, 2026", score: "—", icon: "🏅" },
-  { type: "Course", desc: "Communication for Civil Services — completed", date: "Jun 1, 2026", score: "100%", icon: "✅" },
+  { type: "Course", desc: "Communication & Analytical Thinking — completed", date: "Jun 1, 2026", score: "100%", icon: "✅" },
   { type: "Quiz", desc: "Ethics & Governance Basics — Module 2 Quiz", date: "May 30, 2026", score: "92%", icon: "✏️" },
 ];
 

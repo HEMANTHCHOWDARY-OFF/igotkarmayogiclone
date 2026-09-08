@@ -48,38 +48,38 @@
     - **Verified Competency Growth Timeline** listing all completed quizzes with timestamps and score deltas.
 
 ## Work In Progress
-- Pausing for user manual testing and approval of Phase E.
-- The Core MVP is 100% complete across all 11 specified features.
+- Completed Admin Management enhancements, single-action report generation with SheetJS Excel/CSV, and Universal Student Portal generalization.
+- Certificates and AI Mentor sections streamlined from the student navigation.
 
 ## Next Tasks
-- User manual validation and final approval of the complete MVP.
-- Optional post-hackathon extensions (Phase F): full vector pgvector RAG embeddings or verifiable PDF certificates if requested.
+- User review and ongoing feature enhancement.
 
 ## Recent Decisions
-- Added **Rule 54 (Feature Delivery, Expectation & Verification Protocol)** to [`project details/RULES.md`](file:///e:/SIH_2026/igotkarmayogiclone/project%20details/RULES.md) mandating that every feature addition include explicit UI expectations, state impacts, exact step-by-step browser testing recipes, compiler proof, and an explicit user approval pause.
-- Connected `LearningInterface.tsx` directly to `submitPracticeQuiz` in `CompetencyContext.tsx` so that taking a course quiz immediately recalculates the domain's demonstrated score and boosts the Composite Skill Health Score.
-- Redesigned `Dashboard.tsx` to prominently display the real-time Skill Health Score, a 5-domain comparison bar chart, and an evaluation timeline feed.
+- Added **Rule 55 (Universal Learner Inclusivity Protocol)** to [`project details/RULES.md`](file:///c:/Users/chowd/Documents/igotkarmayogiclone-main/project%20details/RULES.md) mandating that the student portal dynamically support all learner streams (university, tech, competitive, professional) without hardcoding officer cadres.
+- Added **Rule 56 (Single-Action Report Extraction Protocol)** mandating a single "Generate Report" action button with a modal presenting two formats: true Excel (`.xlsx`) via SheetJS array buffers and CSV (`.csv`).
+- Streamlined student navigation: removed Certificates and AI Mentor from the sidebar and topbar, redirecting those URLs to `/student/dashboard`.
 
 ## Architecture Changes
-- Extended `CompetencyContext.tsx` with `PracticeQuizSubmission` interface, `practiceSubmissions` state, and `submitPracticeQuiz()` method.
-- Complete closed loop established: `Assessment` → `GapAnalysis` → `CourseDiscovery`/`LearningPath` → `AssessmentManagement` (Admin HITL) → `LearningInterface` (Quiz) → `Dashboard` (Skill Health updated).
+- Created `src/utils/exportUtils.ts` providing `exportToExcel` (OpenXML binary blob via `xlsx`) and `exportToCSV` (UTF-8 BOM).
+- Bound `GapAnalysis.tsx`, `Dashboard.tsx`, `Assessment.tsx`, `LearningPath.tsx`, and `SkillProfile.tsx` to live user profile (`profile.track` and `profile.institution`).
 
 ## Database Changes
-- Persisted state under `gyanmarg_practice_submissions_v1` in `localStorage`, alongside `gyanmarg_competency_state_v1`, `gyanmarg_ingested_docs_v1`, and `gyanmarg_generated_mcqs_v1`.
+- Profile schema actively stores `track` and `institution` in user metadata and context.
 
 ## AI / RAG Changes
-- Quiz questions in `LearningInterface.tsx` dynamically pull from admin-approved questions produced by the AI Question Synthesizer.
+- Expanded question and syllabus references to support multi-disciplinary computer science, statistics, policy, and data management curricula.
 
 ## UI / UX Changes
-- Added Interactive Knowledge Check mode and post-quiz evaluation hero card with competency impact alerts in `LearningInterface.tsx`.
-- Updated `Dashboard.tsx` with real-time KPI cards, dynamic gap remediation banner, domain comparison BarChart, and evaluation timeline.
+- Replaced separate format buttons across admin reports with a single **"⚡ Generate Report"** action button and modal.
+- Removed AI Mentor and Certificates from the student sidebar.
+- Updated student badges, radar chart benchmarks, and matric tables to universal competency intelligence.
 
 ## Git / Branch Status
 - Current Branch: `main`
-- Modified Files: `src/context/CompetencyContext.tsx`, `src/pages/student/LearningInterface.tsx`, `src/pages/student/Dashboard.tsx`, `project details/CONTEXT.md`, `project details/MEMORY.md`, `project details/PHASES.md`, `walkthrough.md`.
+- Modified Files: `src/pages/admin/*`, `src/pages/student/*`, `src/layouts/*`, `src/app/routes.tsx`, `src/utils/exportUtils.ts`, `project details/*`.
 
 ## Known Issues
-- None. `npm run build` compiles with 0 errors in 468ms.
+- None. `npm run build` compiles with 0 errors.
 
 ## Blockers
 - None. Dev server running on `http://localhost:8443`.
@@ -87,23 +87,19 @@
 ## Important Files
 | File Path | Role |
 | :--- | :--- |
-| `README.md` | Primary platform onboarding, architecture overview & demo guide |
-| `src/context/CompetencyContext.tsx` | Central reactive store for all 11 MVP features |
-| `src/pages/student/LearningInterface.tsx` | Features 6 & 7b: Course Learning & Practice Quiz with Instant Evaluation |
-| `src/pages/student/Dashboard.tsx` | Feature 10: Progress Dashboard & Live Composite Skill Health Score |
-| `src/pages/student/LearningPath.tsx` | Feature 11: 4-Phase Sequenced Milestone Roadmap (roadmap.sh style) |
-| `src/pages/student/CourseDiscovery.tsx` | Features 8 & 9: Gap-Prioritized Recommendations & 22 iGOT Courses |
-| `src/pages/student/GapAnalysis.tsx` | Feature 3: Dynamic Multi-Axis RadarChart & Gap Matrix |
-| `src/pages/student/Assessment.tsx` | Features 2 & 7a: 10-Question Diagnostic Assessment Engine |
-| `src/pages/admin/AssessmentManagement.tsx` | Features 4 & 5: Document Ingestion, AI MCQ Synthesizer & HITL Review |
+| `src/utils/exportUtils.ts` | Client-side Excel (.xlsx) and CSV (.csv) export utilities |
+| `src/pages/admin/Reports.tsx` | Single-action Generate Report interface with Excel and CSV downloads |
+| `src/pages/student/GapAnalysis.tsx` | Universal Student Competency Intelligence and gap quantification |
+| `src/pages/student/Dashboard.tsx` | Student Progress Dashboard synced to dynamic student track |
+| `src/layouts/StudentLayout.tsx` | Streamlined student portal navigation |
+| `src/context/CompetencyContext.tsx` | Reactive competency store |
 
 ## Environment / Configuration Notes
 - Local Dev Server: `http://localhost:8443`.
-- Production build passes cleanly with `npm run build` in ~525ms.
-- Vite configuration modernized: updated to `import.meta.dirname` and added `with { type: 'json' }` attributes for zero warnings.
+- Production build passes cleanly with `npm run build`.
 
 ## Open Decisions
-- Awaiting user manual testing and approval on Phase E.
+- None.
 
 ## Last Updated
-- 2026-09-07 22:09 IST
+- 2026-09-08 20:49 IST

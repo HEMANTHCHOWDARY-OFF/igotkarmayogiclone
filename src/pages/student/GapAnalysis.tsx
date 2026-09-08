@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { C, FONT } from "@/tokens";
 import { useCompetency } from "@/context/CompetencyContext";
+import { useAuth } from "@/context/AuthContext";
 
 function gapColor(gap: number) {
   if (gap > 25) return C.s4;      // Critical gap (Red/Coral)
@@ -65,8 +66,10 @@ const DOMAIN_COURSE_MAP: Record<string, { title: string; courseCode: string; dur
 
 export default function GapAnalysis() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const { domains, getGapMetrics, lastAssessment } = useCompetency();
 
+  const studentTrack = profile?.track || "Higher Education / University Student";
   const gapMetrics = getGapMetrics();
 
   // Radar chart data comparing User Current vs Target Benchmark
@@ -127,7 +130,7 @@ export default function GapAnalysis() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
             <span
               style={{
                 fontSize: 11,
@@ -140,15 +143,15 @@ export default function GapAnalysis() {
                 borderRadius: 4,
               }}
             >
-              MoSPI Competency Intelligence
+              Student Competency Intelligence
             </span>
-            <span style={{ fontSize: 12, color: C.muted }}>Target Role: Statistical Officer (Cadre SSS / ISS)</span>
+            <span style={{ fontSize: 12, color: C.muted }}>Target Track: {studentTrack}</span>
           </div>
           <h2 style={{ fontFamily: FONT.display, fontSize: 26, fontWeight: 700, margin: 0, color: C.dark }}>
             AI Competency Gap Analysis & Benchmarking
           </h2>
           <p style={{ margin: "6px 0 0", color: C.muted, fontSize: 14 }}>
-            Deterministic gap quantification vs. MoSPI FrAC benchmarks:{" "}
+            Deterministic gap quantification vs. target competency benchmarks:{" "}
             <code style={{ fontFamily: FONT.mono, background: C.border, padding: "2px 6px", borderRadius: 4, fontSize: 12 }}>
               Gap = max(0, Benchmark - Demonstrated)
             </code>
@@ -217,7 +220,7 @@ export default function GapAnalysis() {
                   Multi-Axis Competency Radar Chart
                 </div>
                 <div style={{ fontSize: 13, color: C.muted }}>
-                  Real-time visualization of Demonstrated Score vs. MoSPI Target Benchmark across 5 FrAC domains
+                  Real-time visualization of Demonstrated Score vs. Target Benchmark across core learning domains
                 </div>
               </div>
             </div>
@@ -230,7 +233,7 @@ export default function GapAnalysis() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
                 <div style={{ width: 12, height: 12, borderRadius: 2, background: "#1B3D29", opacity: 0.4 }} />
-                <span style={{ color: C.dark, fontWeight: 600 }}>MoSPI Role Benchmark (%)</span>
+                <span style={{ color: C.dark, fontWeight: 600 }}>Target Role Benchmark (%)</span>
               </div>
             </div>
 
@@ -243,7 +246,7 @@ export default function GapAnalysis() {
                 />
                 <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10, fill: C.faint }} axisLine={false} />
                 <Radar
-                  name="MoSPI Role Benchmark"
+                  name="Target Role Benchmark"
                   dataKey="target"
                   stroke="#1B3D29"
                   fill="#1B3D29"
@@ -277,7 +280,7 @@ export default function GapAnalysis() {
               Measured Competency Gap Variance
             </div>
             <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>
-              Deficit percentage required to satisfy official job role requirements
+              Deficit percentage required to satisfy target benchmark requirements
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={gapBarData} layout="vertical" margin={{ top: 0, right: 24, bottom: 0, left: 100 }}>
@@ -310,9 +313,9 @@ export default function GapAnalysis() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <div>
                 <div style={{ fontFamily: FONT.display, fontSize: 16, fontWeight: 700, color: C.dark }}>
-                  MoSPI Gap Matrix Table
+                  Competency Gap Matrix Table
                 </div>
-                <div style={{ fontSize: 12, color: C.muted }}>Standardized FrAC competency breakdown</div>
+                <div style={{ fontSize: 12, color: C.muted }}>Standardized competency mastery breakdown</div>
               </div>
               <span style={{ fontSize: 11, color: C.muted }}>Ranked by Deficit</span>
             </div>

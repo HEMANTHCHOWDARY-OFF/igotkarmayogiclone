@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
 import { useCompetency } from "@/context/CompetencyContext";
+import { useAuth } from "@/context/AuthContext";
 import { IGOT_COURSES, IGOTCourse } from "@/data/igotCourses";
 
 interface RoadmapNode {
@@ -27,6 +28,7 @@ interface RoadmapNode {
 
 export default function LearningPath() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const { getGapMetrics, getSkillHealthScore } = useCompetency();
 
   const [viewMode, setViewMode] = useState<"flowchart" | "grid">("flowchart");
@@ -224,7 +226,7 @@ export default function LearningPath() {
         id: "node-10",
         courseId: 22,
         code: "MOSPI-CERT-500",
-        title: "MoSPI Statistical Officer Verification & Capstone Assessment",
+        title: "Advanced Competency Verification & Capstone Assessment",
         domain: "Public Data Ethics & DPDP Act 2023",
         domainId: "ethics",
         phaseId: 4,
@@ -234,8 +236,8 @@ export default function LearningPath() {
         durationHours: 16,
         level: "Advanced",
         tpac: true,
-        subtopics: ["End-to-End Survey Cycle Simulation", "Multi-Domain Comprehensive Test", "Live Data Pipeline Capstone Defense", "NSSTA Digital Credential"],
-        citation: "NSSTA Board of Examiners Statutory Protocol",
+        subtopics: ["End-to-End Project Cycle Simulation", "Multi-Domain Comprehensive Test", "Live Data Pipeline Capstone Defense", "Digital Credential"],
+        citation: "Standard Board of Examiners Protocol",
         importance: "Mandatory",
       },
     ];
@@ -260,7 +262,7 @@ export default function LearningPath() {
       1: { name: "1.0 Foundation & Statutory Ethics", weeks: "Weeks 1–3", status: "COMPLETED", nodes: [] },
       2: { name: "2.0 Critical Competency Remediation", weeks: "Weeks 4–7", status: "ACTIVE", nodes: [] },
       3: { name: "3.0 Advanced Spatial Analytics & Official Big Data", weeks: "Weeks 8–10", status: "LOCKED", nodes: [] },
-      4: { name: "4.0 National Statistical Officer Capstone", weeks: "Weeks 11–12", status: "LOCKED", nodes: [] },
+      4: { name: "4.0 Comprehensive Capstone & Certification", weeks: "Weeks 11–12", status: "LOCKED", nodes: [] },
     };
 
     filteredNodes.forEach((node) => {
@@ -278,7 +280,7 @@ export default function LearningPath() {
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
               <span
                 style={{
                   fontSize: 11,
@@ -291,15 +293,15 @@ export default function LearningPath() {
                   borderRadius: 4,
                 }}
               >
-                roadmap.sh format · MoSPI FrAC
+                Interactive Roadmap · Competency Framework
               </span>
-              <span style={{ fontSize: 12, color: C.muted }}>Role: Statistical Officer (Cadre SSS / ISS)</span>
+              <span style={{ fontSize: 12, color: C.muted }}>Track: {profile?.track || "Higher Education / University Student"}</span>
             </div>
             <h1 style={{ fontFamily: FONT.display, fontSize: 28, fontWeight: 800, margin: "0 0 6px", color: C.dark }}>
-              Statistical Officer Competency Roadmap
+              Personalized Student Competency Roadmap
             </h1>
             <p style={{ margin: 0, fontSize: 14, color: C.muted, maxWidth: 800 }}>
-              Official developmental roadmap bridging measured competency deficits to meet the Ministry of Statistics & Programme Implementation (MoSPI) job role benchmark.
+              Official developmental roadmap bridging measured competency deficits to achieve target proficiency benchmarks across your chosen learning track.
             </p>
           </div>
 
@@ -803,7 +805,7 @@ export default function LearningPath() {
               >
                 <strong style={{ color: C.s4 }}>🔴 Critical Competency Remediation:</strong>
                 <div>
-                  This module directly addresses your <strong>{selectedNode.gapPoints}% measured deficit</strong> on the FrAC diagnostic test. Completion is essential to satisfy MoSPI Statistical Officer benchmarks.
+                  This module directly addresses your <strong>{selectedNode.gapPoints}% measured deficit</strong> on the competency diagnostic test. Completion is essential to satisfy your track proficiency benchmarks.
                 </div>
               </div>
             )}
@@ -827,7 +829,7 @@ export default function LearningPath() {
 
             {/* Official Verifiable Citation */}
             <div style={{ padding: "12px 14px", background: "#F5F1E6", borderRadius: 8, border: "1px dashed #C6851B", fontSize: 12 }}>
-              <div style={{ fontWeight: 700, color: "#8C3B17", marginBottom: 3 }}>📖 Official MoSPI / NSSTA Reference:</div>
+              <div style={{ fontWeight: 700, color: "#8C3B17", marginBottom: 3 }}>📖 Curriculum & Standard Reference:</div>
               <div style={{ color: C.dark }}>{selectedNode.citation}</div>
             </div>
 

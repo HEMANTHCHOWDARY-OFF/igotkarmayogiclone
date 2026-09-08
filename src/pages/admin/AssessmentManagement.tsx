@@ -21,6 +21,16 @@ export default function AssessmentManagement() {
   const [domainFilter, setDomainFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Filter state for Question Bank
+  const [bankSearch, setBankSearch] = useState("");
+  const [bankDomain, setBankDomain] = useState("all");
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  };
+
   // Ingest Document Modal state
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -77,7 +87,53 @@ export default function AssessmentManagement() {
   });
 
   // Filtered questions for published bank
-  const publishedQuestions = generatedQuestions.filter((q) => q.status === "approved");
+  const publishedQuestions = generatedQuestions.filter((q) => {
+    const isApproved = q.status === "approved";
+    const matchDomain = bankDomain === "all" || q.domainId === bankDomain;
+    const matchSearch =
+      bankSearch.trim() === "" ||
+      q.question.toLowerCase().includes(bankSearch.toLowerCase()) ||
+      q.citation.documentName.toLowerCase().includes(bankSearch.toLowerCase()) ||
+      q.citation.chapter.toLowerCase().includes(bankSearch.toLowerCase());
+    return isApproved && matchDomain && matchSearch;
+  });
+
+  // Question Bank Export to CSV
+  const handleExportBankCSV = () => {
+    const header = "ID,Domain,Question,Option A,Option B,Option C,Option D,Correct Option,Document,Chapter,Page,Explanation\n";
+    const rows = publishedQuestions
+      .map((q) => {
+        const optA = `"${(q.options[0] || "").replace(/"/g, '""')}"`;
+        const optB = `"${(q.options[1] || "").replace(/"/g, '""')}"`;
+        const optC = `"${(q.options[2] || "").replace(/"/g, '""')}"`;
+        const optD = `"${(q.options[3] || "").replace(/"/g, '""')}"`;
+        const correctOpt = `"${(q.options[q.correct] || "").replace(/"/g, '""')}"`;
+        const qText = `"${q.question.replace(/"/g, '""')}"`;
+        const doc = `"${q.citation.documentName.replace(/"/g, '""')}"`;
+        const ch = `"${q.citation.chapter.replace(/"/g, '""')}"`;
+        const pg = `"${q.citation.page.replace(/"/g, '""')}"`;
+        const expl = `"${q.explanation.replace(/"/g, '""')}"`;
+        return `"${q.id}","${q.domain}",${qText},${optA},${optB},${optC},${optD},${correctOpt},${doc},${ch},${pg},${expl}`;
+      })
+      .join("\n");
+
+    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `mospi_published_questions_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${publishedQuestions.length} published questions to CSV.`);
+  };
+
+  // Recall Question from Published Bank
+  const handleRecallQuestion = (qId: string) => {
+    rejectQuestion(qId);
+    showToast("Question recalled from published bank and staged for HITL curation.");
+  };
 
   // Handle document upload simulation
   const handleStartUpload = () => {
@@ -1259,6 +1315,8 @@ export default function AssessmentManagement() {
               justifyContent: "space-between",
               alignItems: "center",
               marginBottom: 18,
+              flexWrap: "wrap",
+              gap: 12,
             }}
           >
             <div>
@@ -1269,78 +1327,208 @@ export default function AssessmentManagement() {
                 Peer-reviewed and approved multiple choice questions deployed to the Learner Assessment Engine.
               </p>
             </div>
-            <span
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                onClick={handleExportBankCSV}
+                style={{
+                  background: C.bg,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  padding: "8px 16px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: C.dark,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span>📥</span> Export Bank CSV
+              </button>
+              <span
+                style={{
+                  background: "#E6F4EC",
+                  color: C.s1,
+                  padding: "6px 14px",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                Live in Learner Diagnostics
+              </span>
+            </div>
+          </div>
+
+          {/* Search & Domain Filter Bar */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
+            <input
+              placeholder="Search questions or citations..."
+              value={bankSearch}
+              onChange={(e) => setBankSearch(e.target.value)}
               style={{
-                background: "#E6F4EC",
-                color: C.s1,
-                padding: "6px 14px",
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 700,
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 13,
+                fontFamily: FONT.body,
+                outline: "none",
+                width: 260,
+              }}
+            />
+            <select
+              value={bankDomain}
+              onChange={(e) => setBankDomain(e.target.value)}
+              style={{
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 13,
+                fontFamily: FONT.body,
+                outline: "none",
+                cursor: "pointer",
               }}
             >
-              Live in Learner Diagnostics
-            </span>
+              <option value="all">All FrAC Domains</option>
+              {domains.map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+            {(bankSearch || bankDomain !== "all") && (
+              <button
+                onClick={() => {
+                  setBankSearch("");
+                  setBankDomain("all");
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: C.muted,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {publishedQuestions.map((q, idx) => (
-              <div
-                key={q.id}
-                style={{
-                  background: C.surface,
-                  borderRadius: 12,
-                  border: `1px solid ${C.border}`,
-                  padding: "16px 20px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: 16,
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span
-                      style={{
-                        background: C.surfaceAlt,
-                        color: C.dark,
-                        padding: "2px 8px",
-                        borderRadius: 4,
-                        fontSize: 11,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {q.domain}
-                    </span>
-                    <span style={{ fontSize: 11, color: C.muted }}>
-                      Citation: {q.citation.documentName} ({q.citation.page})
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>
-                    {idx + 1}. {q.question}
-                  </div>
-                  <div style={{ fontSize: 12, color: C.s1, marginTop: 4, fontWeight: 600 }}>
-                    Answer: {q.options[q.correct]}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleOpenEdit(q)}
+            {publishedQuestions.length === 0 ? (
+              <div style={{ background: C.surface, borderRadius: 12, padding: "32px", textAlign: "center", border: `1px solid ${C.border}`, color: C.muted }}>
+                No published questions match the filter criteria.
+              </div>
+            ) : (
+              publishedQuestions.map((q, idx) => (
+                <div
+                  key={q.id}
                   style={{
-                    background: "transparent",
+                    background: C.surface,
+                    borderRadius: 12,
                     border: `1px solid ${C.border}`,
-                    borderRadius: 6,
-                    padding: "4px 10px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: C.dark,
-                    cursor: "pointer",
+                    padding: "16px 20px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 16,
                   }}
                 >
-                  Edit
-                </button>
-              </div>
-            ))}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+                      <span
+                        style={{
+                          background: C.surfaceAlt,
+                          color: C.dark,
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                          fontSize: 11,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {q.domain}
+                      </span>
+                      <span style={{ fontSize: 11, color: C.muted }}>
+                        Citation: {q.citation.documentName} ({q.citation.page})
+                      </span>
+                      <span style={{ fontSize: 11, color: C.faint }}>· {q.citation.chapter}</span>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>
+                      {idx + 1}. {q.question}
+                    </div>
+                    <div style={{ fontSize: 12, color: C.s1, marginTop: 4, fontWeight: 600 }}>
+                      Answer: {q.options[q.correct]}
+                    </div>
+                    {q.explanation && (
+                      <div style={{ fontSize: 12, color: C.muted, marginTop: 4, fontStyle: "italic" }}>
+                        Rationale: {q.explanation}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => handleOpenEdit(q)}
+                      style={{
+                        background: "transparent",
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 6,
+                        padding: "5px 12px",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: C.dark,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleRecallQuestion(q.id)}
+                      style={{
+                        background: "transparent",
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 6,
+                        padding: "5px 12px",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: C.s4,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Recall
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Global Assessment Management Toast Alert */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            zIndex: 99999,
+            background: C.dark,
+            color: "#fff",
+            padding: "12px 20px",
+            borderRadius: 8,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+        >
+          <span style={{ color: C.s1, fontSize: 16 }}>✓</span>
+          <span>{toast}</span>
         </div>
       )}
 

@@ -1514,3 +1514,26 @@ Provide clear, numbered instructions that anyone can follow in a browser:
 - **Documentation Updated**: Synchronize all 17 sections of `CONTEXT.md`, add the milestone in `MEMORY.md`, and update `PHASES.md`.
 - **User Approval Pause**: Halt execution and await the user's manual review and explicit approval before starting the next feature or phase.
 
+------------------------------------------------------------------------
+
+# Rule 55: Universal Learner Inclusivity Protocol
+
+GyanMarg is engineered for **all learning students** — including university undergraduates, data science/engineering scholars, competitive exam aspirants, and upskilling professionals, alongside public service trainees.
+
+When developing, refactoring, or expanding any student-facing portal views (`/student/*`):
+1. **No Static Cadre Hardcoding**: Never hardcode specific administrative or civil service cadres (e.g. "Statistical Officer Cadre SSS / ISS") as static text in headers, badges, or diagnostic summaries.
+2. **Dynamic Track Adaptation**: Always derive the student's learning domain from the authenticated profile (`profile.track` and `profile.institution` via `useAuth()`).
+3. **Inclusive Competency Benchmarks**: Frame gap analyses and skill evaluations around universal competency benchmarks, peer cohort averages, and national academic/industry standards.
+4. **Broadened Catalogs**: Ensure course recommendations and curricula cater to multi-disciplinary technical and functional competencies.
+
+------------------------------------------------------------------------
+
+# Rule 56: Single-Action Report Extraction Protocol
+
+When implementing data extraction and analytics export functionality across administrative or institutional dashboards:
+1. **Single Action Trigger**: Do not clutter page toolbars with multiple format buttons (e.g., separate Excel, CSV, PDF, JSON buttons side-by-side). Use a single, prominent trigger button labeled **"Generate Report"** (or **"⚡ Generate Report"**).
+2. **Standardized Two-Choice Modal**: Clicking the trigger must open a focused modal offering exactly two standard export choices:
+   - **Excel** (`.xlsx` workbook): Must be compiled via SheetJS (`xlsx`) writing authentic `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` array buffers to ensure true Excel compatibility without fallback alerts.
+   - **CSV** (`.csv` format): Must be UTF-8 BOM encoded for cross-platform spreadsheet software.
+3. **Execution Feedback**: Each export action must provide clear progress feedback, instant browser download triggering, and archive logging.
+

@@ -181,7 +181,7 @@ export default function AssessmentResults() {
               marginBottom: 6,
             }}
           >
-            MoSPI FrAC Baseline Evaluated! 🎯
+            Competency Baseline Evaluated! 🎯
           </div>
           <div style={{ fontSize: 13.5, color: "#D4E8D8", lineHeight: 1.6 }}>
             Your baseline scores have been dynamically updated in your profile. Highest demonstrated proficiency is in{" "}
@@ -245,7 +245,7 @@ export default function AssessmentResults() {
                 fontWeight: 700,
               }}
             >
-              MoSPI FrAC Domain Proficiency Breakdown
+              Domain Competency Proficiency Breakdown
             </div>
             <span style={{ fontSize: 11, color: C.muted }}>5 Core Domains</span>
           </div>
@@ -409,7 +409,7 @@ export default function AssessmentResults() {
               >
                 <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
                 <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: C.dark }}>
-                  <strong>Critical Gap Detected:</strong> Your score in <em>{lowestDomain?.name}</em> ({lowestDomain?.currentScore}%) falls {lowestDomain ? Math.max(0, lowestDomain.targetBenchmark - lowestDomain.currentScore) : 0}% below the MoSPI Statistical Officer requirement.
+                  <strong>Critical Gap Detected:</strong> Your score in <em>{lowestDomain?.name}</em> ({lowestDomain?.currentScore}%) falls {lowestDomain ? Math.max(0, lowestDomain.targetBenchmark - lowestDomain.currentScore) : 0}% below your target benchmark requirement.
                 </p>
               </div>
 
@@ -425,7 +425,7 @@ export default function AssessmentResults() {
               >
                 <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>
                 <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: C.dark }}>
-                  <strong>Strong Foundation:</strong> Demonstrated high baseline in <em>{highestDomain?.name}</em> ({highestDomain?.currentScore}%). Ready for advanced operational deployment.
+                  <strong>Strong Foundation:</strong> Demonstrated high baseline in <em>{highestDomain?.name}</em> ({highestDomain?.currentScore}%). Ready for advanced projects and applications.
                 </p>
               </div>
 
@@ -553,7 +553,7 @@ export default function AssessmentResults() {
               Detailed Question Evaluation & Source Citations
             </div>
             <p style={{ margin: "3px 0 0", fontSize: 12, color: C.muted }}>
-              Every question is verified against official MoSPI manuals, DPDP Act statutory guidelines, and NSSTA reference texts.
+              Every question is verified against recognized academic curricula, statutory guidelines, and industry standards.
             </p>
           </div>
           <span style={{ fontSize: 12, fontWeight: 600, color: C.s1 }}>

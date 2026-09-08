@@ -30,7 +30,7 @@ export default function LearningInterface() {
   const [aiChat, setAiChat] = useState<{ sender: "ai" | "user"; text: string }[]>([
     {
       sender: "ai",
-      text: `Namaste! I am your MoSPI AI Learning Mentor for ${course.title}. Ask me anything about methodology, formulas, or standard operating procedures.`,
+      text: `Namaste! I am your AI Learning Mentor for ${course.title}. Ask me anything about methodology, formulas, or practical exercises.`,
     },
   ]);
   const [aiInput, setAiInput] = useState("");
@@ -117,7 +117,7 @@ export default function LearningInterface() {
         ...prev,
         {
           sender: "ai",
-          text: `In ${course.title}, official guidelines emphasize rigorous documentation and compliance with MoSPI statistical directives. Remember to verify the FPC threshold and consult the relevant volume for formula proofs.`,
+          text: `In ${course.title}, guidelines emphasize rigorous methodology and quality standards. Remember to verify calculations and consult the course reference notes.`,
         },
       ]);
     }, 600);
@@ -470,7 +470,7 @@ export default function LearningInterface() {
                 Lesson 1.2: Sampling Frames & Primary Administrative Units
               </h2>
               <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.7, marginBottom: 20 }}>
-                In this module, civil statistical officers examine how primary sampling units (Census Villages and Urban Enumeration Blocks) are stratified according to the latest administrative updates. Correctly structuring the frame prevents coverage bias and satisfies NSSTA operational quality benchmarks.
+                In this module, students and analysts examine how primary sampling units (Census Villages and Urban Enumeration Blocks) are stratified according to the latest administrative updates. Correctly structuring the frame prevents coverage bias and satisfies operational quality benchmarks.
               </p>
 
               {/* Key Concept Cards */}
@@ -637,7 +637,7 @@ export default function LearningInterface() {
                     Competency Remediation Assessment
                   </h2>
                   <p style={{ fontSize: 13, color: C.muted, margin: "4px 0 0" }}>
-                    Answer the multiple-choice questions directly synthesized from official MoSPI manuals. Submitting re-evaluates your competency gap in real time.
+                    Answer the multiple-choice questions directly synthesized from foundational curriculum manuals. Submitting re-evaluates your competency gap in real time.
                   </p>
                 </div>
 
@@ -1054,7 +1054,7 @@ export default function LearningInterface() {
             }}
           >
             <div style={{ color: "#FAF7F0", fontWeight: 700, fontSize: 13 }}>
-              🤖 MoSPI AI Learning Mentor
+              🤖 GyanMarg AI Learning Mentor
             </div>
             <button
               onClick={() => setShowAI(false)}

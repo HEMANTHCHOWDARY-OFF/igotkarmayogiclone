@@ -16,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const {
     domains,
     getSkillHealthScore,
@@ -59,7 +59,9 @@ export default function Dashboard() {
     boxShadow: "0 2px 4px rgba(0,0,0,0.03)",
   };
 
-  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Officer";
+  const displayName = profile?.fullName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Student Learner";
+  const learnerTrack = profile?.track || "Higher Education / University Student";
+  const learnerInstitution = profile?.institution || "Academic Learning Track";
 
   return (
     <div style={{ fontFamily: FONT.body, color: C.dark, paddingBottom: 48 }}>
@@ -75,18 +77,18 @@ export default function Dashboard() {
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
             <span
               style={{
                 background: C.dark,
                 color: "#FAF7F0",
                 fontSize: 11,
                 fontWeight: 700,
-                padding: "2px 8px",
+                padding: "2px 10px",
                 borderRadius: 4,
               }}
             >
-              MoSPI Statistical Cadre
+              {learnerTrack}
             </span>
             <span
               style={{
@@ -94,11 +96,11 @@ export default function Dashboard() {
                 color: C.s1,
                 fontSize: 11,
                 fontWeight: 700,
-                padding: "2px 8px",
+                padding: "2px 10px",
                 borderRadius: 4,
               }}
             >
-              FrAC Competency Track
+              {learnerInstitution}
             </span>
           </div>
           <h1
@@ -113,7 +115,7 @@ export default function Dashboard() {
             Welcome back, {displayName} 👋
           </h1>
           <p style={{ margin: "4px 0 0", color: C.muted, fontSize: 14 }}>
-            Here is your live civil service competency growth and gap remediation summary.
+            Here is your personalized competency growth, diagnostic benchmarks, and skill gap remediation summary.
           </p>
         </div>
 
@@ -235,7 +237,7 @@ export default function Dashboard() {
                 gap: 4,
               }}
             >
-              <span>{skillHealth >= 70 ? "● Strong Cadre Readiness" : "▲ Remediation Active"}</span>
+              <span>{skillHealth >= 70 ? "● Strong Benchmark Readiness" : "▲ Remediation Active"}</span>
             </div>
           </div>
         </div>
@@ -369,7 +371,7 @@ export default function Dashboard() {
                 Demonstrated Competency vs Target Benchmark
               </div>
               <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-                Real-time scores across official MoSPI FrAC competency domains.
+                Real-time scores across core technical and foundational competency domains.
               </div>
             </div>
             <Link
@@ -409,7 +411,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Right: Quick Actions & Cadre Tools */}
+        {/* Right: Quick Actions & Core Tools */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={card}>
             <div
@@ -421,7 +423,7 @@ export default function Dashboard() {
                 color: C.dark,
               }}
             >
-              Civil Service Core Tools
+              Core Learning & Career Tools
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -510,7 +512,7 @@ export default function Dashboard() {
                 }}
               >
                 <span>📚</span>
-                <span>Browse 22 iGOT Courses</span>
+                <span>Browse 22 Courses</span>
               </button>
             </div>
           </div>
@@ -636,10 +638,10 @@ export default function Dashboard() {
               >
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>
-                    Initial MoSPI FrAC Diagnostic Assessment
+                    Initial Diagnostic Competency Assessment
                   </div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-                    Established baseline across 5 statistical domains with document citations.
+                    Established baseline across core competency domains with curriculum citations.
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>

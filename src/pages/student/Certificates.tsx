@@ -19,7 +19,7 @@ const earned = [
 
 const inProgress = [
   { course: "Data-Driven Governance", progress: 72 },
-  { course: "Effective Communication for Civil Services", progress: 45 },
+  { course: "Effective Communication & Presentation Skills", progress: 45 },
 ];
 
 export default function Certificates() {

@@ -1,8 +1,8 @@
 # GyanMarg AI — Project Memory & Continuity Log
 
 **Location:** `project details/MEMORY.md`  
-**Last Updated:** 2026-09-07  
-**Platform Version:** 1.0.0  
+**Last Updated:** 2026-09-08  
+**Platform Version:** 1.0.1  
 **Current Active Environment:** Local Development (Vite on `http://localhost:8443`)  
 **Backend:** Supabase Cloud (`https://wztsczaaaiceaoerdbfr.supabase.co`)  
 
@@ -324,4 +324,45 @@ Completed **Phase E: Interactive Learning Interface, Instant Evaluation & Learne
      3. Step-by-step browser testing walkthrough with exact URLs.
      4. Automated compilation & route verification proof.
      5. Context synchronization & explicit user approval pause.
+
+---
+
+## 12. Admin Management Suite, Report Extraction & Student Portal Generalization (2026-09-08)
+
+### Summary of Deliverables
+
+1. **Complete Functionality for Every Admin Component**:
+   - **Course Management (`src/pages/admin/CourseManagement.tsx`)**: Real-time domain/level filtering, search, status toggles (Draft, Published, Archived), and course authoring modal.
+   - **Assessment Management (`src/pages/admin/AssessmentManagement.tsx`)**: Ingestion of curriculum documents, 3-step AI question synthesis, and Human-in-the-Loop (HITL) approval/rejection workflows with inline editing.
+   - **Student Management (`src/pages/admin/StudentManagement.tsx`)**: Comprehensive roster table, search, track filtering, and cohort export.
+   - **Competency Analytics (`src/pages/admin/CompetencyAnalytics.tsx`)**: Cross-cohort competency distributions, institutional gap heatmaps, and radar benchmarks.
+   - **Executive Dashboard & Reports (`src/pages/admin/AdminDashboard.tsx`, `src/pages/admin/Reports.tsx`)**: Real-time KPI summaries, chart visualizations, and historical report archives.
+
+2. **Single-Action Report Generation Pattern (Excel & CSV Extractions)**:
+   - Streamlined all reporting triggers across `Reports.tsx`, `AdminLayout.tsx`, and `StudentManagement.tsx` into a single, prominent **"⚡ Generate Report"** action button.
+   - Replaced cluttered multi-button bars with a modal presenting exactly two choices:
+     - **📗 Excel** (`.xlsx` multi-tab workbook generated via SheetJS `xlsx` and Blob array buffer).
+     - **📊 CSV** (`.csv` tabular data with UTF-8 BOM encoding for seamless spreadsheet opening).
+   - Created `src/utils/exportUtils.ts` providing reliable client-side export routines (`exportToExcel`, `exportToCSV`).
+
+3. **Universal Student Portal Refactoring**:
+   - Refactored the Student Portal from narrow civil-service officer cadre terminology to welcome **every learning student** (university scholars, data science and AI learners, academic researchers, competitive aspirants, and career upskillers).
+   - Connected `useAuth()` to dynamically reflect the logged-in student's actual track and institution across:
+     - **Dashboard (`src/pages/student/Dashboard.tsx`)**: Dynamic track badge, institution tag, "● Strong Benchmark Readiness" indicator, and "Core Learning & Career Tools".
+     - **Gap Analysis (`src/pages/student/GapAnalysis.tsx`)**: "Student Competency Intelligence", dynamic track benchmarks, multi-axis radar chart, and standardized Competency Gap Matrix Table.
+     - **Learning Path (`src/pages/student/LearningPath.tsx`)**: "Personalized Student Competency Roadmap", 4.0 Comprehensive Capstone, and standard curriculum citations.
+     - **Assessment & Results (`src/pages/student/Assessment.tsx`, `src/pages/student/AssessmentResults.tsx`)**: "Adaptive Skill Baseline Engine" and track requirement deficit feedback.
+     - **Skill Profile (`src/pages/student/SkillProfile.tsx`)**: Live student identity and peer/cohort benchmark comparisons.
+     - **Course Discovery (`src/pages/student/CourseDiscovery.tsx`)**: Universal catalog and enrolled students counters.
+
+4. **Removal of Certificates & AI Mentor Sections**:
+   - Removed **AI Mentor** and **Certificates** from the student sidebar navigation (`src/layouts/StudentLayout.tsx`).
+   - Removed the "Ask AI Mentor" button from the top navigation bar.
+   - Redirected `/student/certificates` and `/student/ai-mentor` routes to `/student/dashboard` in `src/app/routes.tsx`.
+
+### Verification
+- `npm run build`: Production build passes cleanly with 0 TypeScript/ESLint errors in 678ms.
+- Dev server verified responsive on `http://localhost:8443`.
+- Live browser tests verified clean rendering across admin reports, gap analysis, and streamlined student navigation.
+
 

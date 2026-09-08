@@ -10,10 +10,8 @@ const nav = [
   { to: "/student/gap-analysis",  icon: "⬡",  label: "Gap Analysis"         },
   { to: "/student/learning-path", icon: "⤑",  label: "Learning Path"        },
   { to: "/student/courses",       icon: "⊟",  label: "Course Discovery"     },
-  { to: "/student/ai-mentor",     icon: "✦",  label: "AI Mentor"            },
   { to: "/student/progress",      icon: "↗",  label: "Progress & Analytics" },
   { to: "/student/achievements",  icon: "◈",  label: "Achievements"         },
-  { to: "/student/certificates",  icon: "⬡",  label: "Certificates"         },
 ];
 
 const bottom = [
@@ -158,12 +156,6 @@ export default function StudentLayout() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <LanguageSelector variant="compact" />
-            <button
-              onClick={() => navigate("/student/ai-mentor")}
-              style={{ background: `${C.accent}18`, border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: C.accent, cursor: "pointer" }}
-            >
-              Ask AI Mentor
-            </button>
             <div
               onClick={() => navigate("/student/settings")}
               title={profile?.fullName || "Profile"}

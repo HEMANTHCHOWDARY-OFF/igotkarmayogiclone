@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
 import { useCompetency } from "@/context/CompetencyContext";
+import { useAuth } from "@/context/AuthContext";
 
 const TOTAL_SECONDS = 20 * 60;
 
@@ -30,6 +31,7 @@ const card: React.CSSProperties = {
 
 export default function Assessment() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const { diagnosticQuestions, submitDiagnosticAssessment } = useCompetency();
 
   const [current, setCurrent] = useState(0);
@@ -93,7 +95,7 @@ export default function Assessment() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
             <span
               style={{
                 fontSize: 11,
@@ -106,9 +108,9 @@ export default function Assessment() {
                 borderRadius: 4,
               }}
             >
-              MoSPI FrAC Baseline Engine
+              Adaptive Skill Baseline Engine
             </span>
-            <span style={{ fontSize: 12, color: C.muted }}>Role: Statistical Officer (SSS / ISS Track)</span>
+            <span style={{ fontSize: 12, color: C.muted }}>Track: {profile?.track || "Higher Education / University Student"}</span>
           </div>
           <h1
             style={{

@@ -173,7 +173,7 @@ export default function CourseDiscovery() {
           </label>
         </div>
 
-        <FilterSection title="MoSPI FrAC Domain">
+        <FilterSection title="Competency Domain">
           {domains.map((d) => (
             <CheckItem
               key={d}
@@ -249,7 +249,7 @@ export default function CourseDiscovery() {
                     borderRadius: 4,
                   }}
                 >
-                  iGOT Karmayogi civil service catalog
+                  GyanMarg Universal Learning Catalog
                 </span>
                 <span style={{ fontSize: 12, color: C.muted }}>22 Specialized Programs</span>
               </div>
@@ -474,7 +474,7 @@ export default function CourseDiscovery() {
                   }}
                 >
                   <span>⏱️ <strong>{course.duration}h</strong> total</span>
-                  <span>👥 <strong>{course.enrolled.toLocaleString()}</strong> civil servants</span>
+                  <span>👥 <strong>{course.enrolled.toLocaleString()}</strong> enrolled students</span>
                   <span>⭐ <strong>{course.rating}</strong> ({course.reviews})</span>
                   <span>📚 {course.modulesCount} modules</span>
                 </div>

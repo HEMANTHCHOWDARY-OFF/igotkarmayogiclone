@@ -24,7 +24,7 @@ const initialMessages: Message[] = [
   {
     id: 3,
     role: "ai",
-    text: "Digital Governance in India refers to the use of digital technologies to deliver government services efficiently, transparently, and inclusively to citizens. It sits at the heart of the Digital India initiative launched in 2015.\n\nKey pillars include:\n\n• DigiLocker — a cloud-based document wallet for citizens to access official documents like Aadhaar, PAN, and educational certificates without physical copies.\n\n• UMANG (Unified Mobile Application for New-age Governance) — a single mobile app providing access to 1,200+ central and state government services.\n\n• GeM (Government e-Marketplace) — a procurement platform that brings transparency and efficiency to public purchases, with ₹2+ lakh crore in transactions.\n\n• CoWIN — the COVID-19 vaccination management platform, which became a global benchmark for digital public health infrastructure.\n\nFor civil servants, Digital Governance competency means understanding these platforms, policy frameworks like the National Data Governance Policy, and the ability to leverage data-driven decision-making in your ministry or department.",
+    text: "Digital Governance in India refers to the use of digital technologies to deliver government services efficiently, transparently, and inclusively to citizens. It sits at the heart of the Digital India initiative launched in 2015.\n\nKey pillars include:\n\n• DigiLocker — a cloud-based document wallet for citizens to access official documents like Aadhaar, PAN, and educational certificates without physical copies.\n\n• UMANG (Unified Mobile Application for New-age Governance) — a single mobile app providing access to 1,200+ central and state government services.\n\n• GeM (Government e-Marketplace) — a procurement platform that brings transparency and efficiency to public purchases, with ₹2+ lakh crore in transactions.\n\n• CoWIN — the COVID-19 vaccination management platform, which became a global benchmark for digital public health infrastructure.\n\nFor learners, students, and professionals, Digital Governance competency means understanding these platforms, policy frameworks like the National Data Governance Policy, and the ability to leverage data-driven decision-making in academic, civic, and professional fields.",
     time: "9:02 AM",
   },
   {
@@ -46,12 +46,12 @@ const suggestedQuestions = [
   "What is the Data Protection Bill 2023?",
   "How do I prepare for the Policy Analysis module?",
   "Summarise my current learning progress",
-  "What are the key ethics frameworks for IAS officers?",
+  "What are the key ethics frameworks in public and corporate governance?",
 ];
 
 const recentTopics = [
   { title: "Digital Governance", time: "Today" },
-  { title: "Ethics in Civil Services", time: "Yesterday" },
+  { title: "Ethics & Integrity Principles", time: "Yesterday" },
   { title: "Policy Analysis Methods", time: "Jun 3" },
   { title: "Leadership Frameworks", time: "Jun 1" },
 ];

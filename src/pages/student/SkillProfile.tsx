@@ -1,6 +1,7 @@
 import { C, FONT } from "@/tokens";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 import { Link } from "react-router";
+import { useAuth } from "@/context/AuthContext";
 
 const domains = [
   { key: "Digital", label: "Digital Literacy", icon: "💻", score: 72, target: 85, level: "Proficient", userAvg: 72, deptAvg: 65, natAvg: 60 },
@@ -24,31 +25,44 @@ const levelColor = (level: string) => {
 };
 
 export default function SkillProfile() {
+  const { user, profile } = useAuth();
+  const displayName = profile?.fullName || user?.user_metadata?.full_name || "Student Learner";
+  const initials = profile?.initials || displayName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "SL";
+  const studentTrack = profile?.track || "Higher Education / University Student";
+  const studentInstitution = profile?.institution || "Academic Learning Track";
+
   return (
     <div style={{ padding: "28px 32px", background: C.bg, minHeight: "100vh", fontFamily: FONT.body }}>
       {/* Header */}
       <div style={{
         background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14,
         padding: "20px 24px", marginBottom: 28,
-        display: "flex", justifyContent: "space-between", alignItems: "center"
+        display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16
       }}>
         <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
           <div style={{
             width: 60, height: 60, borderRadius: "50%", background: C.dark,
             display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#fff", fontWeight: 800, fontSize: 22, flexShrink: 0
-          }}>RK</div>
+            color: "#fff", fontWeight: 800, fontSize: 22, flexShrink: 0,
+            overflow: "hidden"
+          }}>
+            {profile?.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              initials
+            )}
+          </div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 18, color: C.dark, fontFamily: FONT.display }}>
-              Rajesh Kumar
+              {displayName}
             </div>
-            <div style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>IAS (2019) · Ministry of Rural Development</div>
-            <div style={{ fontSize: 12, color: C.faint, marginTop: 2 }}>Batch 2019 · Dept: Rural Infrastructure</div>
+            <div style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>{studentTrack}</div>
+            <div style={{ fontSize: 12, color: C.faint, marginTop: 2 }}>Institution: {studentInstitution}</div>
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 12, color: C.faint, marginBottom: 10 }}>
-            Last Updated: June 5, 2026
+            Active Profile · GyanMarg AI
           </div>
           <Link
             to="/student/assessment"
@@ -181,8 +195,8 @@ export default function SkillProfile() {
           <div style={{ display: "flex", gap: 20, marginBottom: 20, flexWrap: "wrap" }}>
             {[
               { color: C.s1, label: "You" },
-              { color: C.accent, label: "Dept. Average" },
-              { color: C.s3, label: "National Average" },
+              { color: C.accent, label: "Cohort / Peer Average" },
+              { color: C.s3, label: "National Benchmark" },
             ].map(({ color, label }) => (
               <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 12, height: 12, borderRadius: 2, background: color }} />
@@ -200,7 +214,7 @@ export default function SkillProfile() {
                   </span>
                   <div style={{ display: "flex", gap: 14, fontSize: 12 }}>
                     <span style={{ color: C.s1, fontWeight: 600 }}>You: {d.userAvg}</span>
-                    <span style={{ color: C.accent }}>Dept: {d.deptAvg}</span>
+                    <span style={{ color: C.accent }}>Cohort: {d.deptAvg}</span>
                     <span style={{ color: C.s3 }}>Nat: {d.natAvg}</span>
                   </div>
                 </div>
