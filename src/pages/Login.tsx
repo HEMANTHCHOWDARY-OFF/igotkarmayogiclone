@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router";
 import { C, FONT } from "@/tokens";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const { signIn, signInWithGoogle, loginWithGoogle, loginAsDemo, isAuthenticated, profile } = useAuth();
   
   const [form, setForm] = useState({ email: "", password: "", remember: false });
@@ -147,11 +149,11 @@ export default function Login() {
         <div style={{ width: "100%", maxWidth: 420 }}>
 
           <h1 style={{ fontFamily: FONT.display, fontSize: 26, fontWeight: 700, color: C.dark, marginBottom: 6 }}>
-            {role === "admin" ? "Administrator Portal" : "Sign in"}
+            {role === "admin" ? "Administrator Portal" : t("auth_welcome_back")}
           </h1>
           {role === "student" ? (
             <p style={{ fontSize: 14, color: C.muted, marginBottom: 24 }}>
-              Don't have an account? <Link to="/register" style={{ color: C.accent, fontWeight: 600, textDecoration: "none" }}>Register here</Link>
+              {t("auth_no_account")} <Link to="/register" style={{ color: C.accent, fontWeight: 600, textDecoration: "none" }}>{t("auth_sign_up_link")}</Link>
             </p>
           ) : (
             <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>
@@ -167,7 +169,7 @@ export default function Login() {
                 background: role === r ? C.dark : "transparent",
                 color: role === r ? "#fff" : C.muted,
                 fontWeight: 600, fontSize: 13, transition: "all 0.15s",
-              }}>{r === "student" ? "Student / Learner" : "Administrator"}</button>
+              }}>{r === "student" ? t("auth_role_student") : t("auth_role_admin")}</button>
             ))}
           </div>
 
@@ -193,7 +195,7 @@ export default function Login() {
           <form onSubmit={handleSubmit}>
             {/* Email */}
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Email Address</label>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>{t("auth_email_label")}</label>
               <input
                 type="email" required placeholder="your.name@example.com or user@gov.in"
                 value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
@@ -210,7 +212,7 @@ export default function Login() {
             {/* Password */}
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>Password</label>
+                <label style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>{t("auth_password_label")}</label>
                 <a href="#" style={{ fontSize: 12, color: C.accent, textDecoration: "none", fontWeight: 600 }}>Forgot password?</a>
               </div>
               <input
@@ -238,7 +240,7 @@ export default function Login() {
               background: loading ? C.muted : C.accent, color: "#fff", border: "none", cursor: loading ? "not-allowed" : "pointer",
               transition: "background 0.15s",
             }}>
-              {loading ? "Signing in..." : `Sign in as ${role === "admin" ? "Administrator" : "Student"} →`}
+              {loading ? "Signing in..." : t("auth_sign_in_btn")}
             </button>
 
             {/* Continue with Google for Student */}
@@ -289,7 +291,7 @@ export default function Login() {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
-                  Continue with Google
+                  {t("auth_google_btn")}
                 </button>
 
                 <div style={{ textAlign: "center", marginTop: 8 }}>
@@ -316,7 +318,7 @@ export default function Login() {
           {/* Quick Demo Access Buttons */}
           <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.faint, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10, textAlign: "center" }}>
-              Quick Direct Access (Instant Demo)
+              {t("auth_demo_header")}
             </div>
             <div>
               {role === "student" ? (

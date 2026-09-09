@@ -365,4 +365,62 @@ Completed **Phase E: Interactive Learning Interface, Instant Evaluation & Learne
 - Dev server verified responsive on `http://localhost:8443`.
 - Live browser tests verified clean rendering across admin reports, gap analysis, and streamlined student navigation.
 
+---
+
+## 13. Public Layout Modernization: Fully Functional i18n & Game-Style Guided Tutorial (2026-09-09)
+
+### Summary of Deliverables
+
+1. **Centralized Internationalization Architecture (`src/i18n/`)**:
+   - Built a type-safe, centralized i18n system eliminating hardcoded translations.
+   - **Supported Languages (`src/i18n/types.ts`, `src/i18n/index.ts`)**:
+     - English (`en`) — Default fallback dictionary (`src/i18n/locales/en.ts`).
+     - Hindi (`hi`) — Comprehensive authentic translation (`src/i18n/locales/hi.ts`).
+     - Telugu (`te`) & Tamil (`ta`) — Extensible Indian language foundations (`src/i18n/locales/te.ts`, `src/i18n/locales/ta.ts`).
+   - **Fallback & Interpolation Engine**: Resolves `translations[lang][key] || translations['en'][key] || defaultText || key` and dynamically replaces template parameters (e.g., `{step}` of `{total}`).
+   - **Language Context (`src/context/LanguageContext.tsx`)**:
+     - Reactive state synced with `localStorage` (`gyanmarg_lang` with `karmayogi_lang` legacy support).
+     - Dynamically synchronizes document language via `document.documentElement.lang`.
+     - Zero page reload required — triggers instant UI updates across all components.
+   - **Accessible Language Selector (`src/components/LanguageSelector.tsx`)**:
+     - Dual-mode UI: Segmented quick switch (EN / हिन्दी) + dropdown for all supported Indian languages.
+     - Full keyboard accessibility with ARIA attributes (`role="listbox"`, `aria-expanded`), `Escape` dismissal, and `ArrowUp`/`ArrowDown` navigation.
+     - Compact variant designed for auth headers and mobile layouts.
+
+2. **Interactive Game-Style Guided Tutorial (`src/components/tutorial/`, `src/context/TutorialContext.tsx`)**:
+   - Developed an engaging quest-onboarding tour to guide new visitors through GyanMarg AI's core capabilities.
+   - **6 Progressive Missions (`src/components/tutorial/tutorialSteps.ts`)**:
+     - **Mission 01 — Welcome to GyanMarg AI** (`[data-tutorial="welcome"]`): Introduces diagnostic baseline, competency gap analysis, and personalized learning.
+     - **Mission 02 — Explore Curated Competency Courses** (`[data-tutorial="courses"]`): Highlights competency-mapped curriculum modules.
+     - **Mission 03 — Adaptive Diagnostic Assessment** (`[data-tutorial="assessment"]`): Spotlights the baseline diagnostic assessment trigger.
+     - **Mission 04 — Skill Gap Matrix & Closed-Loop Roadmap** (`[data-tutorial="gap-analysis"]`): Showcases the cyclic competency workflow.
+     - **Mission 05 — 24/7 Contextual AI Study Mentor** (`[data-tutorial="mentor"]`): Highlights the verified academic mentor feature.
+     - **Mission 06 — Begin Your Personalized Journey** (`[data-tutorial="get-started"]`): Guides users to Sign In / Register.
+   - **Game-Style Quest Card (`src/components/tutorial/TutorialCard.tsx`)**:
+     - Stage badge with golden amber XP progress bar.
+     - Structured micro-cards: 💡 *What it does*, 🎮 *How to use it*, and ⭐ *Why it matters*.
+     - Interactive step indicator dots for direct step jumping.
+     - Controls: `← Back`, `Next Mission →`, `Finish Quest 🏆`, and `Skip Tour`.
+     - Keyboard navigation: `[← / →]` to navigate, `[Esc]` to exit.
+     - Responsive smart viewport positioning with safety edge clamping.
+   - **Dynamic SVG Spotlight Overlay (`src/components/tutorial/TutorialOverlay.tsx`)**:
+     - Fullscreen SVG mask cutout that dims the page while spotlighting the active target.
+     - Pulsing golden amber accent border (`#C6851B`).
+     - Auto-scrolls target elements smoothly into center view (`scrollIntoView({ behavior: 'smooth', block: 'center' })`).
+     - Listens to window resize and scroll events for accurate positioning.
+   - **Celebratory Completion Screen**:
+     - Achievement modal celebrating quest completion with 1-click CTA to launch the Learner Portal.
+     - Persistent completion & skip states stored in `localStorage` (`gyanmarg_tutorial_completed`, `gyanmarg_tutorial_skipped`).
+     - Permanent "Take a Tour 🎯" and "Replay Tutorial 🔄" triggers in navbar, public header, and footer.
+
+3. **Public Layout & Auth Integration (`src/layouts/PublicLayout.tsx`)**:
+   - Wrapped public layout with `TutorialProvider` and mounted `TutorialOverlay`.
+   - Enhanced non-landing pages (`/login`, `/register`, `/onboarding`) with a branded top navigation header featuring GyanMarg AI logo, "Take a Tour 🎯" (redirects to `/?tour=true` and triggers tour), compact `LanguageSelector`, and "Back to Home" navigation.
+   - Connected `useLanguage()` across `Login.tsx` and `Register.tsx` to translate auth headings, inputs, role toggles, and demo buttons.
+
+### Verification
+- `npm run build`: Verified clean production compilation in 593ms across 738 modules.
+- Dev server responsive on `http://localhost:8443`.
+
+
 

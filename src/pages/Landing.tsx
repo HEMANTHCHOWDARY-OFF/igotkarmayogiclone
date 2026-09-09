@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { C, FONT } from "@/tokens";
 import { useLanguage } from "@/context/LanguageContext";
+import { useTutorial } from "@/context/TutorialContext";
 import LanguageSelector from "@/components/LanguageSelector";
 
 // ── Competency radar data ────────────────────────────────────────────────────
@@ -374,6 +375,7 @@ const cyclicStages = [
 export default function Landing() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const { startTutorial, replayTutorial } = useTutorial();
   const [quizTab, setQuizTab] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [pipelineView, setPipelineView] = useState<"circuit" | "vertical">("circuit");
@@ -518,9 +520,41 @@ export default function Landing() {
             <span>{t("admin_portal_btn")}</span>
           </button>
 
+          {/* Take a Tour Button */}
+          <button
+            onClick={startTutorial}
+            style={{
+              fontFamily: FONT.body,
+              fontWeight: 700,
+              fontSize: 14.5,
+              color: C.accent,
+              background: "rgba(198, 133, 27, 0.16)",
+              border: `1.5px solid ${C.accent}60`,
+              borderRadius: 24,
+              padding: "11px 20px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = C.accent;
+              (e.currentTarget as HTMLButtonElement).style.color = "#FFFFFF";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "rgba(198, 133, 27, 0.16)";
+              (e.currentTarget as HTMLButtonElement).style.color = C.accent;
+            }}
+          >
+            <span>{t("take_tour")}</span>
+          </button>
+
           <LanguageSelector variant="topbar" />
 
           <button
+            data-tutorial="get-started"
             onClick={() => navigate("/login")}
             style={{
               fontFamily: FONT.body,
@@ -560,7 +594,7 @@ export default function Landing() {
         }}
       >
         {/* Left */}
-        <div>
+        <div data-tutorial="welcome">
           {/* Kicker */}
           <div
             style={{
@@ -613,6 +647,7 @@ export default function Landing() {
           {/* CTAs */}
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             <button
+              data-tutorial="assessment"
               onClick={() => navigate("/student/dashboard")}
               style={{
                 fontFamily: language === "hi" ? "'Noto Sans Devanagari', 'Hind', sans-serif" : FONT.body,
@@ -745,6 +780,7 @@ export default function Landing() {
       {/* ── CYCLIC COMPETENCY WORKFLOW (BOX-SHAPED CLOSED-LOOP) ───────────── */}
       <section
         id="pipeline"
+        data-tutorial="gap-analysis"
         style={{
           background: C.surface,
           padding: "80px 5%",
@@ -2473,6 +2509,7 @@ export default function Landing() {
       {/* ── 7. CURATED COMPETENCY COURSES ───────────────────────── */}
       <section
         id="courses"
+        data-tutorial="courses"
         style={{
           background: C.surface,
           padding: "80px 5%",
@@ -3011,6 +3048,7 @@ export default function Landing() {
           {platformPillars.map((p) => (
             <div
               key={p.title}
+              data-tutorial={p.title.includes("Mentor") ? "mentor" : undefined}
               style={{
                 background: C.bg,
                 border: `1px solid ${C.border}`,
@@ -3256,8 +3294,39 @@ export default function Landing() {
                 maxWidth: 290,
               }}
             >
-              An intelligent competency diagnostic and adaptive learning platform for students, researchers, and professional learners. Identifies skill deficits, generates source-cited practice assessments, and accelerates mastery through personalized learning pathways.
+              {t("footer_desc")}
             </p>
+
+            <button
+              type="button"
+              onClick={replayTutorial}
+              style={{
+                fontFamily: FONT.body,
+                fontSize: 13,
+                fontWeight: 700,
+                color: C.accent,
+                background: "rgba(198, 133, 27, 0.15)",
+                border: `1.5px solid ${C.accent}50`,
+                borderRadius: 20,
+                padding: "8px 16px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 20,
+                transition: "all 0.18s ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = C.accent;
+                (e.currentTarget as HTMLButtonElement).style.color = "#FFFFFF";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(198, 133, 27, 0.15)";
+                (e.currentTarget as HTMLButtonElement).style.color = C.accent;
+              }}
+            >
+              {t("replay_tutorial")}
+            </button>
 
             {/* Social icons */}
             <div style={{ display: "flex", gap: 12 }}>

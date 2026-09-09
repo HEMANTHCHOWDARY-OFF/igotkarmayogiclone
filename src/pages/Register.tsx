@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import { C, FONT } from "@/tokens";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const learnerTracks = [
   "Higher Education / University Student",
@@ -24,6 +25,7 @@ const institutionTypes = [
 
 export default function Register() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { signUp, loginAsDemo } = useAuth();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
@@ -168,11 +170,11 @@ export default function Register() {
           </div>
 
           <h1 style={{ fontFamily: FONT.display, fontSize: 26, fontWeight: 700, color: C.dark, marginBottom: 6 }}>
-            {step === 1 ? "Create your account" : "Your learning profile"}
+            {step === 1 ? t("auth_create_account") : "Your learning profile"}
           </h1>
           <p style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
             {step === 1
-              ? <>Already registered? <Link to="/login" style={{ color: C.accent, fontWeight: 600, textDecoration: "none" }}>Sign in</Link></>
+              ? <>{t("auth_already_account")} <Link to="/login" style={{ color: C.accent, fontWeight: 600, textDecoration: "none" }}>{t("auth_sign_in_link")}</Link></>
               : "Help us calibrate the AI diagnostic to your background & goals"}
           </p>
 
@@ -220,20 +222,23 @@ export default function Register() {
           <form onSubmit={handleSubmit}>
             {step === 1 && (
               <>
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Full Name</label>
-                  <input type="text" required placeholder="Priya Sharma" value={form.name} onChange={e => f("name", e.target.value)} style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
+                {/* Full Name */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>{t("auth_name_label")}</label>
+                    <input type="text" required placeholder="Priya Sharma" value={form.name} onChange={e => f("name", e.target.value)} style={inputStyle}
+                      onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Email Address</label>
-                  <input type="email" required placeholder="priya.sharma@example.edu / .gov.in" value={form.email} onChange={e => f("email", e.target.value)} style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
+                {/* Email */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>{t("auth_email_label")}</label>
+                    <input type="email" required placeholder="priya.sharma@example.edu / .gov.in" value={form.email} onChange={e => f("email", e.target.value)} style={inputStyle}
+                      onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
-                <div style={{ marginBottom: 24 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>Password</label>
-                  <input type="password" required placeholder="Min. 8 characters" value={form.password} onChange={e => f("password", e.target.value)} style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
+                {/* Password */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: C.dark, marginBottom: 6 }}>{t("auth_password_label")}</label>
+                    <input type="password" required placeholder="Min. 8 characters" value={form.password} onChange={e => f("password", e.target.value)} style={inputStyle}
+                      onFocus={e => (e.target.style.borderColor = C.accent)} onBlur={e => (e.target.style.borderColor = C.border)} />
                 </div>
               </>
             )}

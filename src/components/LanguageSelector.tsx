@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useId } from "react";
 import { useLanguage, Language } from "@/context/LanguageContext";
+import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { C, FONT } from "@/tokens";
 
 interface LanguageSelectorProps {
@@ -9,7 +10,10 @@ interface LanguageSelectorProps {
 export default function LanguageSelector({ variant = "topbar" }: LanguageSelectorProps) {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listboxId = useId();
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -22,16 +26,53 @@ export default function LanguageSelector({ variant = "topbar" }: LanguageSelecto
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const languages: { code: Language; label: string; subLabel: string; nativeName: string }[] = [
-    { code: "en", label: "English", subLabel: "English", nativeName: "EN" },
-    { code: "hi", label: "हिन्दी", subLabel: "Hindi", nativeName: "हि" },
-  ];
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setIsOpen(true);
+        const currentIndex = SUPPORTED_LANGUAGES.findIndex((l) => l.code === language);
+        setHighlightedIndex(currentIndex >= 0 ? currentIndex : 0);
+      }
+      return;
+    }
 
-  const current = languages.find((l) => l.code === language) || languages[0];
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1) % SUPPORTED_LANGUAGES.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev - 1 + SUPPORTED_LANGUAGES.length) % SUPPORTED_LANGUAGES.length);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < SUPPORTED_LANGUAGES.length) {
+        setLanguage(SUPPORTED_LANGUAGES[highlightedIndex].code);
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    } else if (e.key === "Tab") {
+      setIsOpen(false);
+    }
+  };
+
+  const current = SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0];
+
+  // Colors based on variant
+  const isDark = variant === "topbar";
+  const bgBadge = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(27, 61, 41, 0.06)";
+  const borderBadge = isDark ? "rgba(255, 255, 255, 0.22)" : C.border;
+  const textColor = isDark ? "#FFFFFF" : C.dark;
+  const mutedText = isDark ? "rgba(255, 255, 255, 0.75)" : C.muted;
 
   return (
     <div
       ref={dropdownRef}
+      onKeyDown={handleKeyDown}
       style={{
         position: "relative",
         display: "inline-flex",
@@ -40,178 +81,276 @@ export default function LanguageSelector({ variant = "topbar" }: LanguageSelecto
         userSelect: "none",
       }}
     >
-      {/* Quick Segmented Switch / Button */}
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          background: variant === "topbar" ? "rgba(255, 255, 255, 0.08)" : "rgba(27, 61, 41, 0.06)",
-          border: variant === "topbar" ? "1.5px solid rgba(255, 255, 255, 0.22)" : `1.5px solid ${C.border}`,
-          borderRadius: 24,
-          padding: "4px 8px",
-          gap: 6,
-        }}
-      >
-        {/* English Button */}
+      {variant === "compact" ? (
+        /* Compact Single Dropdown Pill for Auth / Mobile headers */
         <button
-          type="button"
-          onClick={() => setLanguage("en")}
-          style={{
-            fontFamily: FONT.body,
-            fontSize: 14.5,
-            fontWeight: language === "en" ? 700 : 600,
-            color: language === "en"
-              ? "#FFFFFF"
-              : variant === "topbar" ? "rgba(255, 255, 255, 0.75)" : C.muted,
-            background: language === "en"
-              ? (variant === "topbar" ? C.accent : C.dark)
-              : "transparent",
-            border: "none",
-            borderRadius: 20,
-            padding: "8px 18px",
-            cursor: "pointer",
-            transition: "all 0.18s ease",
-            outline: "none",
-          }}
-        >
-          English
-        </button>
-
-        {/* Hindi Button */}
-        <button
-          type="button"
-          onClick={() => setLanguage("hi")}
-          style={{
-            fontFamily: FONT.body,
-            fontSize: 14.5,
-            fontWeight: language === "hi" ? 700 : 600,
-            color: language === "hi"
-              ? "#FFFFFF"
-              : variant === "topbar" ? "rgba(255, 255, 255, 0.75)" : C.muted,
-            background: language === "hi"
-              ? (variant === "topbar" ? C.accent : C.dark)
-              : "transparent",
-            border: "none",
-            borderRadius: 20,
-            padding: "8px 18px",
-            cursor: "pointer",
-            transition: "all 0.18s ease",
-            outline: "none",
-          }}
-        >
-          हिन्दी
-        </button>
-
-        {/* Dropdown Chevron toggle */}
-        <button
+          ref={triggerRef}
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          title="Language options"
+          aria-haspopup="listbox"
           aria-expanded={isOpen}
+          aria-controls={listboxId}
+          title="Select Language / भाषा चुनें"
           style={{
-            background: "transparent",
-            border: "none",
-            color: variant === "topbar" ? "rgba(255, 255, 255, 0.8)" : C.muted,
-            cursor: "pointer",
-            fontSize: 11,
-            padding: "0 8px 0 2px",
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
+            gap: 8,
+            background: bgBadge,
+            border: `1.5px solid ${borderBadge}`,
+            borderRadius: 20,
+            padding: "7px 14px",
+            color: textColor,
+            fontFamily: FONT.body,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            outline: "none",
+            transition: "all 0.18s ease",
+            backdropFilter: "blur(8px)",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = C.accent;
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = borderBadge;
           }}
         >
-          {isOpen ? "▲" : "▼"}
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              background: C.accent,
+              color: "#FFFFFF",
+              fontSize: 10,
+              fontWeight: 700,
+            }}
+          >
+            {current.nativeName}
+          </span>
+          <span>{current.label}</span>
+          <span style={{ fontSize: 9, opacity: 0.8 }}>{isOpen ? "▲" : "▼"}</span>
         </button>
-      </div>
+      ) : (
+        /* Full Segmented Quick-Switch Bar with Dropdown Chevron */
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            background: bgBadge,
+            border: `1.5px solid ${borderBadge}`,
+            borderRadius: 24,
+            padding: "3px 6px",
+            gap: 4,
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          {/* Quick EN button */}
+          <button
+            type="button"
+            onClick={() => setLanguage("en")}
+            aria-label="Switch to English"
+            style={{
+              fontFamily: FONT.body,
+              fontSize: 13.5,
+              fontWeight: language === "en" ? 700 : 500,
+              color: language === "en" ? "#FFFFFF" : mutedText,
+              background: language === "en" ? C.accent : "transparent",
+              border: "none",
+              borderRadius: 18,
+              padding: "7px 14px",
+              cursor: "pointer",
+              transition: "all 0.18s ease",
+              outline: "none",
+            }}
+          >
+            EN
+          </button>
+
+          {/* Quick HI button */}
+          <button
+            type="button"
+            onClick={() => setLanguage("hi")}
+            aria-label="हिन्दी में बदलें"
+            style={{
+              fontFamily: "'Noto Sans Devanagari', 'Hind', sans-serif",
+              fontSize: 13.5,
+              fontWeight: language === "hi" ? 700 : 500,
+              color: language === "hi" ? "#FFFFFF" : mutedText,
+              background: language === "hi" ? C.accent : "transparent",
+              border: "none",
+              borderRadius: 18,
+              padding: "7px 14px",
+              cursor: "pointer",
+              transition: "all 0.18s ease",
+              outline: "none",
+            }}
+          >
+            हिन्दी
+          </button>
+
+          {/* Current language tag if neither EN nor HI */}
+          {language !== "en" && language !== "hi" && (
+            <span
+              style={{
+                fontFamily: FONT.body,
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: "#FFFFFF",
+                background: C.accent,
+                borderRadius: 18,
+                padding: "6px 12px",
+              }}
+            >
+              {current.label}
+            </span>
+          )}
+
+          {/* Dropdown Chevron toggle */}
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-haspopup="listbox"
+            aria-expanded={isOpen}
+            aria-controls={listboxId}
+            title="All Indian Languages / सभी भाषाएं"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: mutedText,
+              cursor: "pointer",
+              fontSize: 11,
+              padding: "6px 8px",
+              display: "flex",
+              alignItems: "center",
+              borderRadius: 14,
+              outline: "none",
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = textColor;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = mutedText;
+            }}
+          >
+            <span style={{ fontSize: 10 }}>{isOpen ? "▲" : "▼"}</span>
+          </button>
+        </div>
+      )}
 
       {/* Floating Dropdown Menu */}
       {isOpen && (
         <div
+          id={listboxId}
+          role="listbox"
+          aria-label="Supported Languages"
           style={{
             position: "absolute",
-            top: "calc(100% + 6px)",
+            top: "calc(100% + 8px)",
             right: 0,
             background: "#FFFFFF",
-            border: `1px solid ${C.border}`,
-            borderRadius: 10,
-            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-            padding: 6,
-            minWidth: 160,
+            border: `1.5px solid ${C.border}`,
+            borderRadius: 12,
+            boxShadow: "0 14px 34px -6px rgba(0, 0, 0, 0.22), 0 8px 16px -4px rgba(0, 0, 0, 0.12)",
+            padding: 8,
+            minWidth: 200,
             zIndex: 1000,
             animation: "fadeIn 0.15s ease-out",
           }}
         >
           <div
             style={{
-              padding: "4px 8px 6px",
-              fontSize: 10,
+              padding: "6px 10px 8px",
+              fontSize: 11,
               fontWeight: 700,
-              letterSpacing: "0.06em",
+              letterSpacing: "0.05em",
               textTransform: "uppercase",
-              color: C.faint,
+              color: C.muted,
               borderBottom: `1px solid ${C.border}`,
-              marginBottom: 4,
+              marginBottom: 6,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            Select Language / भाषा चुनें
+            <span>Select Language / भाषा</span>
+            <span style={{ fontSize: 10, color: C.faint, fontWeight: 500 }}>
+              {SUPPORTED_LANGUAGES.length} Indian Languages
+            </span>
           </div>
 
-          {languages.map((item) => {
+          {SUPPORTED_LANGUAGES.map((item, idx) => {
             const isSelected = language === item.code;
+            const isHighlighted = idx === highlightedIndex;
+
             return (
-              <button
+              <div
                 key={item.code}
-                type="button"
+                role="option"
+                aria-selected={isSelected}
+                tabIndex={0}
                 onClick={() => {
                   setLanguage(item.code);
                   setIsOpen(false);
+                  triggerRef.current?.focus();
                 }}
+                onMouseEnter={() => setHighlightedIndex(idx)}
                 style={{
                   width: "100%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "8px 10px",
-                  borderRadius: 6,
+                  padding: "9px 12px",
+                  borderRadius: 8,
                   border: "none",
-                  background: isSelected ? `${C.accent}14` : "transparent",
+                  background: isSelected
+                    ? `${C.accent}18`
+                    : isHighlighted
+                    ? "#F4EFE6"
+                    : "transparent",
                   color: isSelected ? C.accentHov : C.dark,
                   fontWeight: isSelected ? 700 : 500,
-                  fontSize: 12,
+                  fontSize: 13,
                   cursor: "pointer",
                   textAlign: "left",
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = "#F4EFE6";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent";
+                  transition: "background 0.12s ease",
+                  outline: "none",
+                  marginBottom: 2,
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span
                     style={{
-                      display: "inline-block",
-                      width: 20,
-                      height: 20,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 24,
+                      height: 24,
                       borderRadius: "50%",
-                      background: isSelected ? C.accent : "#E5E7EB",
-                      color: isSelected ? "#fff" : "#4B5563",
-                      fontSize: 10,
+                      background: isSelected ? C.accent : "#E6E2D6",
+                      color: isSelected ? "#FFFFFF" : C.dark,
+                      fontSize: 11,
                       fontWeight: 700,
-                      textAlign: "center",
-                      lineHeight: "20px",
                     }}
                   >
                     {item.nativeName}
                   </span>
                   <div>
-                    <div>{item.label}</div>
-                    <div style={{ fontSize: 10, color: C.muted, fontWeight: 400 }}>{item.subLabel}</div>
+                    <div style={{ lineHeight: 1.2 }}>{item.label}</div>
+                    <div style={{ fontSize: 10.5, color: C.muted, fontWeight: 400, marginTop: 2 }}>
+                      {item.subLabel}
+                    </div>
                   </div>
                 </div>
-                {isSelected && <span style={{ color: C.accent, fontSize: 13, fontWeight: 800 }}>✓</span>}
-              </button>
+                {isSelected && (
+                  <span style={{ color: C.accent, fontSize: 14, fontWeight: 800 }}>✓</span>
+                )}
+              </div>
             );
           })}
         </div>

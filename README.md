@@ -77,6 +77,8 @@ All 11 Core MVP features defined in the engineering specifications are 100% impl
 | **9** | **Curated Capacity-Building Catalog** | 22 civil service capacity-building courses across 5 competency domains, featuring NSSTA TPAC endorsement badges. | `src/data/igotCourses.ts`, `src/pages/student/CourseDetails.tsx` |
 | **10**| **Learner Progress Dashboard** | Live Composite Skill Health Score (0–100), domain comparison BarChart, dynamic priority gap remediation alert, and evaluation timeline feed. | `src/pages/student/Dashboard.tsx` |
 | **11**| **Interactive Learning Path Roadmaps** | Visual flowchart roadmap inspired by roadmap.sh, featuring an SVG connecting spine, milestone anchor hubs, subtopic chips, and a slide-out inspector drawer. | `src/pages/student/LearningPath.tsx` |
+| **12**| **Centralized i18n Internationalization** | Modular translation engine supporting English (`en`), Hindi (`hi`), Telugu (`te`), and Tamil (`ta`), with zero-refresh reactive switching, English fallback, and accessible multi-language selector. | `src/i18n/`, `src/context/LanguageContext.tsx`, `src/components/LanguageSelector.tsx` |
+| **13**| **Interactive Game-Style Guided Tutorial** | 6-stage quest tour onboarding with SVG spotlight mask cutout, pulsing amber frame, quest cards with XP progress bar, keyboard navigation, and celebratory completion screen. | `src/components/tutorial/`, `src/context/TutorialContext.tsx`, `src/layouts/PublicLayout.tsx` |
 
 ---
 
@@ -84,9 +86,11 @@ All 11 Core MVP features defined in the engineering specifications are 100% impl
 
 - **Frontend Core:** React 19, TypeScript, Vite 8
 - **Styling & Design Tokens:** Vanilla CSS design token system (`src/tokens.ts`, `src/index.css`) with warm parchment (`#EDE8D8`), deep forest green (`#1B3D29`), and golden amber (`#C6851B`) accents
+- **Internationalization (i18n):** Type-safe centralized dictionary engine with English fallback and parameter interpolation
+- **Interactive Tour Engine:** Custom game-style guided tutorial with SVG mask spotlight, dynamic viewport clamping, and smooth scroll orchestration
 - **Data Visualizations:** Recharts (Dual-polygon RadarChart, Competency Comparison BarChart, AreaChart)
 - **Backend & Authentication:** Supabase JavaScript Client (`@supabase/supabase-js`) with active session management and Google OAuth 2.0
-- **State Architecture:** Unified Reactive Context Store (`src/context/CompetencyContext.tsx`) with zero-loss `localStorage` state persistence across sessions
+- **State Architecture:** Unified Reactive Context Store (`src/context/CompetencyContext.tsx`, `src/context/TutorialContext.tsx`, `src/context/LanguageContext.tsx`) with zero-loss `localStorage` state persistence across sessions
 
 ---
 

@@ -58,6 +58,19 @@ Aligned with the **Smart India Hackathon (SIH) 2026 Problem Statement SIH26101**
 - **Role-Based Access Control (RBAC):** Distinct permissions for Learners (Statistical Officers), Faculty/Trainers (NSSTA), and Administrators (DIID/MoSPI).
 - **Data Protection & Encryption:** TLS 1.3 in transit, AES-256 at rest, conforming to CERT-In and DPDP Act standards.
 
+### 1.9 Centralized Internationalization (i18n) & Accessibility
+- **Multi-Language Architecture:** Centralized dictionary system supporting English (`en`), Hindi (`hi`), Telugu (`te`), and Tamil (`ta`), engineered for straightforward expansion across all 22 official Indian languages.
+- **Instant Reactive Switching:** Immediate localized updates across all Public Layout components (Navbar, Hero, Steps, Courses, Quizzes, Portals, CTA, Footer, and Auth forms) with zero page reload.
+- **English Fallback & Interpolation:** Robust fallback to English when keys are unpopulated in regional dialects; parameter interpolation for dynamic values.
+- **Accessible Language Selector:** Accessible segmented toggle and keyboard-operable dropdown menu (`listbox`, `Escape`, `ArrowUp`/`ArrowDown`).
+
+### 1.10 Interactive Game-Style Guided Tutorial
+- **Quest-Based Tour Onboarding:** 6-stage interactive quest (Welcome, Curated Courses, Diagnostic Assessment, Skill Gap Matrix, 24/7 AI Mentor, Get Started) introducing platform capabilities.
+- **Dynamic Spotlight Cutout Overlay:** Viewport-clamped SVG mask dimming the page and highlighting target elements with an animated pulsing amber frame (`#C6851B`).
+- **Game-Styled Quest Cards:** Stage counter, amber XP level progress bar, interactive step indicator dots, structured explanation chips (💡 *What it does*, 🎮 *How to use*, ⭐ *Why it matters*), and keyboard controls (`[← / →]`, `[Esc]`).
+- **Celebratory Completion Screen:** Achievement modal celebrating quest completion with 1-click CTA to launch the Learner Portal.
+- **Persistent State:** Saves completion and skip preferences in `localStorage` with permanent re-launch triggers in navbar, public header, and footer.
+
 ---
 
 ## 2. Secondary & Enhanced Features
