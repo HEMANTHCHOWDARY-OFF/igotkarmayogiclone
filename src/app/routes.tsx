@@ -11,6 +11,7 @@ import Register             from "@/pages/Register";
 import Onboarding           from "@/pages/Onboarding";
 
 import StudentDashboard     from "@/pages/student/Dashboard";
+import InterestedCourses    from "@/pages/student/InterestedCourses";
 import SkillProfile         from "@/pages/student/SkillProfile";
 import Assessment           from "@/pages/student/Assessment";
 import AssessmentResults    from "@/pages/student/AssessmentResults";
@@ -43,9 +44,17 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: "/student",
+    path: "/student/interested-courses",
     element: (
       <ProtectedRoute requiredRole="student">
+        <InterestedCourses />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/student",
+    element: (
+      <ProtectedRoute requiredRole="student" requireOnboarding={true}>
         <StudentLayout />
       </ProtectedRoute>
     ),

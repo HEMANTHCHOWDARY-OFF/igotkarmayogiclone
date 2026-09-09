@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
 import { useCompetency } from "@/context/CompetencyContext";
-import { IGOT_COURSES } from "@/data/igotCourses";
+import { getCourseById, getAllUnifiedCourses } from "@/services/karmayogiCoursesService";
 
 export default function LearningInterface() {
   const { id } = useParams();
@@ -16,11 +16,18 @@ export default function LearningInterface() {
 
   // Find course from canonical catalog or fallback to first
   const course = useMemo(() => {
-    const courseId = Number(id);
-    return IGOT_COURSES.find((c) => c.id === courseId) || IGOT_COURSES[0];
+    return getCourseById(id) || getAllUnifiedCourses()[0];
   }, [id]);
 
-  const courseDomain = domains.find((d) => d.id === course.domainId) || domains[0];
+  const courseDomainId = useMemo(() => {
+    if ((course as any).domainId) return (course as any).domainId;
+    const match = domains.find(
+      (d) => d.name.toLowerCase() === (course.domain || "").toLowerCase()
+    );
+    return match ? match.id : "stats";
+  }, [course, domains]);
+
+  const courseDomain = domains.find((d) => d.id === courseDomainId) || domains[0];
 
   // Active view state: either a lesson id or "quiz"
   const [activeTab, setActiveTab] = useState<"lesson" | "quiz">("lesson");
@@ -30,7 +37,7 @@ export default function LearningInterface() {
   const [aiChat, setAiChat] = useState<{ sender: "ai" | "user"; text: string }[]>([
     {
       sender: "ai",
-      text: `Namaste! I am your AI Learning Mentor for ${course.title}. Ask me anything about methodology, formulas, or practical exercises.`,
+      text: `Namaste! I am your AI Learning Mentor for ${course.title}. Ask me anything about methodology, administrative guidelines, or practical exercises.`,
     },
   ]);
   const [aiInput, setAiInput] = useState("");
@@ -38,19 +45,19 @@ export default function LearningInterface() {
   // Quiz questions: filter from generatedQuestions matching this domain, fallback to diagnostic
   const quizQuestions = useMemo(() => {
     const matched = generatedQuestions.filter(
-      (q) => q.domainId === course.domainId && q.status === "approved"
+      (q) => q.domainId === courseDomainId && q.status === "approved"
     );
     if (matched.length >= 2) {
       return matched.slice(0, 3);
     }
-    const allDomainGen = generatedQuestions.filter((q) => q.domainId === course.domainId);
+    const allDomainGen = generatedQuestions.filter((q) => q.domainId === courseDomainId);
     if (allDomainGen.length >= 2) {
       return allDomainGen.slice(0, 3);
     }
     // Fallback to diagnostic questions for this domain
-    const fallbackDiag = diagnosticQuestions.filter((q) => q.domainId === course.domainId);
+    const fallbackDiag = diagnosticQuestions.filter((q) => q.domainId === courseDomainId);
     return fallbackDiag.length > 0 ? fallbackDiag.slice(0, 3) : diagnosticQuestions.slice(0, 3);
-  }, [generatedQuestions, diagnosticQuestions, course.domainId]);
+  }, [generatedQuestions, diagnosticQuestions, courseDomainId]);
 
   // Quiz state
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>(
@@ -101,7 +108,7 @@ export default function LearningInterface() {
   };
 
   const handleSubmitQuiz = () => {
-    const result = submitPracticeQuiz(course.domainId, userAnswers, quizQuestions, course.title);
+    const result = submitPracticeQuiz(courseDomainId, userAnswers, quizQuestions, course.title);
     setSubmissionResult(result);
     setQuizSubmitted(true);
   };

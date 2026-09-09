@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { getCoursesByTitlesOrIds } from "@/services/karmayogiCoursesService";
 
 export interface MoSPIDomain {
   id: string;
@@ -586,6 +588,8 @@ const PRACTICE_STORAGE_KEY = "gyanmarg_practice_submissions_v1";
 const CompetencyContext = createContext<CompetencyContextType | undefined>(undefined);
 
 export function CompetencyProvider({ children }: { children: React.ReactNode }) {
+  const { profile } = useAuth();
+
   const [domains, setDomains] = useState<MoSPIDomain[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -600,6 +604,37 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
     }
     return MOSPI_DOMAINS_DEFAULT;
   });
+
+  // Dynamically synchronize active domains from learner's selected courses and calibration
+  useEffect(() => {
+    const rawCourseIds = (profile?.interestedCourses || []).map(String);
+    const userCourses = getCoursesByTitlesOrIds(rawCourseIds);
+
+    let activeNames: string[] = [];
+    if (profile?.interestedDomains && profile.interestedDomains.length > 0) {
+      activeNames = profile.interestedDomains;
+    } else if (userCourses.length > 0) {
+      activeNames = Array.from(new Set(userCourses.map((c) => c.domain)));
+    }
+
+    if (activeNames.length === 0) return;
+
+    setDomains((prev) => {
+      const palette = ["#1B3D29", "#0F5C5C", "#C6851B", "#8C3B17", "#3F51B5", "#7B1FA2", "#00796B", "#D84315", "#2E7D32"];
+      return activeNames.map((name, idx) => {
+        const id = name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8);
+        const existing = prev.find((p) => p.name.toLowerCase() === name.toLowerCase() || p.id === id);
+        return {
+          id,
+          name,
+          short: name.length > 15 ? name.slice(0, 14) + "…" : name,
+          targetBenchmark: existing?.targetBenchmark || 85,
+          currentScore: existing?.currentScore || Math.min(85, 45 + (idx * 11) % 40),
+          color: existing?.color || palette[idx % palette.length],
+        };
+      });
+    });
+  }, [profile?.interestedDomains, profile?.interestedCourses]);
 
   const [lastAssessment, setLastAssessment] = useState<AssessmentSubmission | null>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -910,18 +945,11 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
         severity = "Minor";
       }
 
-      let action = "Maintain current competency with periodic refreshers";
-      if (d.id === "stats") {
-        action = gap > 25 ? "Enroll in Advanced Sampling Theory & NSS Methodology" : "Complete Micro-Module on Finite Population Correction";
-      } else if (d.id === "sql") {
-        action = gap > 25 ? "Practice Complex Window Functions & CPI Aggregations" : "Complete Index Optimization Workshop";
-      } else if (d.id === "python") {
-        action = gap > 25 ? "Complete PLFS Microdata Cleaning with Pandas Lab" : "Review NumPy Array Vectorization Best Practices";
-      } else if (d.id === "gis") {
-        action = gap > 25 ? "Master QGIS Spatial Sampling Frame Construction" : "Complete FOD GPS Tablet Geo-tagging Protocol";
-      } else if (d.id === "ethics") {
-        action = gap > 25 ? "Mandatory DPDP Act 2023 & UN Fundamental Principles Certification" : "Review Statistical Confidentiality Guidelines";
-      }
+      let action = gap > 25
+        ? `Priority: Complete advanced capacity modules in ${d.name}`
+        : gap >= 10
+        ? `Targeted: Complete practice exercises & quizzes in ${d.name}`
+        : `Benchmark Met in ${d.name} · Periodic Refresher Recommended`;
 
       return {
         domainId: d.id,

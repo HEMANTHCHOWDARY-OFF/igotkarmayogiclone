@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router";
 import { C, FONT } from "@/tokens";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { isSessionOnboardingCompleted } from "@/utils/coursePreferences";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -25,8 +26,16 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && profile) {
-      const target = destination || (profile.role === "admin" ? "/admin/dashboard" : "/student/dashboard");
-      navigate(target, { replace: true });
+      if (profile.role === "admin") {
+        const target = destination || "/admin/dashboard";
+        navigate(target, { replace: true });
+      } else {
+        const hasCompletedOnboarding = isSessionOnboardingCompleted(profile.id);
+        const target = hasCompletedOnboarding
+          ? (destination || "/student/dashboard")
+          : "/student/interested-courses";
+        navigate(target, { replace: true });
+      }
     }
   }, [isAuthenticated, profile, destination, navigate]);
 
@@ -46,8 +55,11 @@ export default function Login() {
           setErrorMsg(error.message);
         }
       } else {
-        const target = destination || (role === "admin" ? "/admin/dashboard" : "/student/dashboard");
-        navigate(target);
+        if (role === "admin") {
+          navigate(destination || "/admin/dashboard");
+        } else {
+          navigate("/student/interested-courses");
+        }
       }
     } catch (err: any) {
       setErrorMsg(err?.message || "An unexpected error occurred during sign in.");
@@ -74,14 +86,16 @@ export default function Login() {
   const handleSelectGoogleAccount = (email: string, name?: string) => {
     loginWithGoogle(email, name);
     setShowGoogleModal(false);
-    const target = destination || "/student/dashboard";
-    navigate(target);
+    navigate("/student/interested-courses");
   };
 
   const handleDemoLogin = (demoRole: "student" | "admin") => {
     loginAsDemo(demoRole);
-    const target = destination || (demoRole === "admin" ? "/admin/dashboard" : "/student/dashboard");
-    navigate(target);
+    if (demoRole === "admin") {
+      navigate(destination || "/admin/dashboard");
+    } else {
+      navigate("/student/interested-courses");
+    }
   };
 
   return (

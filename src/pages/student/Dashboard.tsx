@@ -11,8 +11,15 @@ import {
 } from "recharts";
 import { C, FONT } from "@/tokens";
 import { useCompetency } from "@/context/CompetencyContext";
-import { IGOT_COURSES } from "@/data/igotCourses";
+import {
+  getCoursesByTitlesOrIds,
+  getCourseById,
+  getAllUnifiedCourses,
+  type IGOTCatalogCourse,
+} from "@/services/karmayogiCoursesService";
+import { getCourseProgress } from "@/services/courseProgressService";
 import { useAuth } from "@/context/AuthContext";
+import { useMemo } from "react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -30,18 +37,45 @@ export default function Dashboard() {
   const gapMetrics = getGapMetrics();
   const topGap = gapMetrics.length > 0 ? gapMetrics[0] : null;
 
-  // Chart data: current vs target across 5 MoSPI domains
-  const chartData = domains.map((d) => ({
-    name: d.short,
-    Current: d.currentScore,
-    Target: d.targetBenchmark,
-    color: d.color,
-  }));
+  // Selected courses resolved from profile
+  const selectedCourseIds = useMemo(() => {
+    return (profile?.interestedCourses || []).map(String);
+  }, [profile?.interestedCourses]);
 
-  // Recommended course based on top gap
-  const recommendedCourse = topGap
-    ? IGOT_COURSES.find((c) => c.domainId === topGap.domainId) || IGOT_COURSES[0]
-    : IGOT_COURSES[0];
+  const userSelectedCourses: IGOTCatalogCourse[] = useMemo(() => {
+    return getCoursesByTitlesOrIds(selectedCourseIds);
+  }, [selectedCourseIds]);
+
+  // Chart data: current vs target across active domains
+  const chartData = useMemo(() => {
+    if (profile?.interestedDomains && profile.interestedDomains.length > 0) {
+      return profile.interestedDomains.slice(0, 5).map((dom, i) => {
+        const match = domains.find((d) => d.name.toLowerCase() === dom.toLowerCase());
+        return {
+          name: dom.length > 14 ? dom.slice(0, 13) + "…" : dom,
+          Current: match ? match.currentScore : Math.min(85, 45 + (i * 12) % 40),
+          Target: match ? match.targetBenchmark : 80,
+          color: match ? match.color : i % 2 === 0 ? C.s1 : C.accent,
+        };
+      });
+    }
+    return domains.map((d) => ({
+      name: d.short,
+      Current: d.currentScore,
+      Target: d.targetBenchmark,
+      color: d.color,
+    }));
+  }, [profile?.interestedDomains, domains]);
+
+  // Recommended course based on user's active selected courses or top gap
+  const recommendedCourse = useMemo(() => {
+    if (userSelectedCourses.length > 0) {
+      return userSelectedCourses[0];
+    }
+    return topGap
+      ? getCourseById(topGap.domainId) || getAllUnifiedCourses()[0]
+      : getAllUnifiedCourses()[0];
+  }, [userSelectedCourses, topGap]);
 
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-IN", {
@@ -125,6 +159,118 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* iGOT KARMAYOGI CALIBRATION & GROQ AI RECOMMENDATIONS BANNER */}
+      {((profile?.interestedDomains && profile.interestedDomains.length > 0) || profile?.aiRecommendations) && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, #1E293B 0%, #0F172A 100%)",
+            color: "#FFFFFF",
+            borderRadius: 14,
+            padding: "20px 24px",
+            marginBottom: 24,
+            boxShadow: "0 4px 18px rgba(15, 23, 42, 0.16)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 12,
+              flexWrap: "wrap",
+              gap: 12,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 20 }}>⚡</span>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#F8FAFC" }}>
+                  iGOT Karmayogi Calibrated Path (Powered by Groq AI)
+                </div>
+                <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.65)" }}>
+                  Curriculum dynamically aligned with your selected competencies &amp; career aspirations
+                </div>
+              </div>
+            </div>
+
+            <Link
+              to="/student/interested-courses"
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#FCD34D",
+                background: "rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                padding: "6px 12px",
+                borderRadius: 8,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              ✎ Calibrate Domains &amp; Courses
+            </Link>
+          </div>
+
+          {profile?.aiRecommendations?.competencyAnalysis && (
+            <p
+              style={{
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: "rgba(255,255,255,0.85)",
+                margin: "0 0 14px",
+              }}
+            >
+              {profile.aiRecommendations.competencyAnalysis}
+            </p>
+          )}
+
+          {/* Domains and Sub-domains chips */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#FCD34D", textTransform: "uppercase" }}>
+              Active Focus:
+            </span>
+            {profile?.interestedDomains?.map((d) => (
+              <span
+                key={d}
+                style={{
+                  background: "rgba(245, 158, 11, 0.2)",
+                  color: "#FEF3C7",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 99,
+                }}
+              >
+                {d}
+              </span>
+            ))}
+            {profile?.interestedSubDomains?.slice(0, 4).map((sd) => (
+              <span
+                key={sd}
+                style={{
+                  background: "rgba(255, 255, 255, 0.08)",
+                  color: "rgba(255,255,255,0.8)",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  fontSize: 11,
+                  padding: "2px 8px",
+                  borderRadius: 99,
+                }}
+              >
+                {sd}
+              </span>
+            ))}
+            {(profile?.interestedSubDomains?.length || 0) > 4 && (
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+                +{profile!.interestedSubDomains!.length - 4} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* TOP GAP REMEDIATION ALERT BANNER */}
       {topGap && topGap.gap > 0 && (
         <div
@@ -188,6 +334,199 @@ export default function Dashboard() {
           </button>
         </div>
       )}
+
+      {/* MY SELECTED LEARNING PATH & COURSES SECTION */}
+      <div style={{ ...card, marginBottom: 28, padding: "22px 24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18 }}>🎓</span>
+              <h2 style={{ fontFamily: FONT.display, fontSize: 17, fontWeight: 800, margin: 0, color: C.dark }}>
+                My Selected Learning Path &amp; Courses ({userSelectedCourses.length})
+              </h2>
+            </div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 3 }}>
+              Your active competency trajectory based on your selected domains and courses.
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link
+              to="/student/interested-courses"
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: C.accent,
+                background: `${C.accent}14`,
+                border: `1px solid ${C.accent}40`,
+                padding: "6px 12px",
+                borderRadius: 8,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <span>⚙️</span>
+              <span>Modify Selection</span>
+            </Link>
+
+            <Link
+              to="/student/learning-path"
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: "#fff",
+                background: "#1B3D29",
+                padding: "6px 14px",
+                borderRadius: 8,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <span>🗺️</span>
+              <span>View Full Roadmap</span>
+            </Link>
+          </div>
+        </div>
+
+        {userSelectedCourses.length === 0 ? (
+          <div
+            style={{
+              padding: "24px 20px",
+              textAlign: "center",
+              background: C.bg,
+              borderRadius: 10,
+              border: `1px dashed ${C.border}`,
+            }}
+          >
+            <span style={{ fontSize: 28 }}>🧭</span>
+            <div style={{ fontWeight: 700, fontSize: 15, color: C.dark, marginTop: 8 }}>
+              No Courses Selected Yet
+            </div>
+            <div style={{ fontSize: 13, color: C.muted, marginTop: 4, maxWidth: 480, margin: "4px auto 14px" }}>
+              Explore our 5,400+ official iGOT Karmayogi catalog or ask our AI mentor to recommend courses tailored to your goals.
+            </div>
+            <Link
+              to="/student/interested-courses"
+              style={{
+                display: "inline-block",
+                padding: "9px 20px",
+                background: C.accent,
+                color: "#fff",
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 700,
+                textDecoration: "none",
+              }}
+            >
+              Select Courses with AI →
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
+            {userSelectedCourses.map((c) => {
+              const prog = getCourseProgress(c.id);
+              const progressPct = prog.percent;
+              const statusLabel =
+                progressPct === 100 ? "Completed" : progressPct > 0 ? "In Progress" : "Not Started";
+
+              return (
+                <div
+                  key={c.id}
+                  style={{
+                    background: C.bg,
+                    borderRadius: 12,
+                    border: `1px solid ${C.border}`,
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                          background: c.level === "Advanced" ? "#FFE8E2" : "#EBF5F0",
+                          color: c.level === "Advanced" ? C.s4 : C.s1,
+                        }}
+                      >
+                        {c.level || "Beginner"}
+                      </span>
+                      <span style={{ fontSize: 11, color: C.muted, fontFamily: FONT.mono }}>
+                        ⏱️ {c.duration || 6}h
+                      </span>
+                    </div>
+
+                    <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: C.dark, lineHeight: 1.35 }}>
+                      <Link to={`/student/courses/${c.id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                        {c.title}
+                      </Link>
+                    </h4>
+
+                    <div style={{ fontSize: 11.5, color: C.muted }}>
+                      {c.domain} {c.subDomain && `• ${c.subDomain}`}
+                    </div>
+                  </div>
+
+                  <div>
+                    {/* Progress Bar */}
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted, marginBottom: 4 }}>
+                      <span>{statusLabel}</span>
+                      <span style={{ fontWeight: 700, color: progressPct > 0 ? C.s1 : C.muted }}>{progressPct}%</span>
+                    </div>
+                    <div style={{ height: 5, background: C.border, borderRadius: 3, overflow: "hidden", marginBottom: 10 }}>
+                      <div style={{ height: "100%", width: `${progressPct}%`, background: C.s1 }} />
+                    </div>
+
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <Link
+                        to={`/student/courses/${c.id}/learn`}
+                        style={{
+                          flex: 1,
+                          textAlign: "center",
+                          padding: "7px 0",
+                          borderRadius: 6,
+                          background: C.accent,
+                          color: "#fff",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textDecoration: "none",
+                        }}
+                      >
+                        {progressPct === 100 ? "Review Module" : progressPct > 0 ? "Resume Learning →" : "Start Learning →"}
+                      </Link>
+                      <Link
+                        to={`/student/courses/${c.id}`}
+                        style={{
+                          padding: "7px 10px",
+                          borderRadius: 6,
+                          background: C.surface,
+                          border: `1px solid ${C.border}`,
+                          color: C.dark,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          textDecoration: "none",
+                        }}
+                      >
+                        Syllabus
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Quick KPI Stats Row (Feature 10) */}
       <div
@@ -405,8 +744,8 @@ export default function Dashboard() {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Current" fill={C.s1} radius={[4, 4, 0, 0]} name="Current Demonstrated" />
-              <Bar dataKey="Target" fill={C.border} radius={[4, 4, 0, 0]} name="Target Benchmark" />
+              <Bar dataKey="Current" fill={C.s1} radius={[4, 4, 0, 0]} name="Current Demonstrated" barSize={36} maxBarSize={48} />
+              <Bar dataKey="Target" fill={C.border} radius={[4, 4, 0, 0]} name="Target Benchmark" barSize={36} maxBarSize={48} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -512,7 +851,7 @@ export default function Dashboard() {
                 }}
               >
                 <span>📚</span>
-                <span>Browse 22 Courses</span>
+                <span>Explore 5,400+ Catalog Courses</span>
               </button>
             </div>
           </div>
@@ -527,6 +866,14 @@ export default function Dashboard() {
             </div>
             <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
               {recommendedCourse.duration} • {recommendedCourse.level}
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
+              <span>Progress:</span>
+              <strong style={{ color: getCourseProgress(recommendedCourse.id).percent > 0 ? C.s1 : C.muted }}>
+                {getCourseProgress(recommendedCourse.id).percent === 0
+                  ? "Not Started (0%)"
+                  : `${getCourseProgress(recommendedCourse.id).percent}% Completed`}
+              </strong>
             </div>
             <div style={{ marginTop: 12 }}>
               <Link
@@ -544,7 +891,9 @@ export default function Dashboard() {
                   textDecoration: "none",
                 }}
               >
-                Resume Learning & Quiz →
+                {getCourseProgress(recommendedCourse.id).percent > 0
+                  ? "Resume Learning & Quiz →"
+                  : "Start Learning & Quiz →"}
               </Link>
             </div>
           </div>

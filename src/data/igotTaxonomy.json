@@ -1,0 +1,1131 @@
+[
+  {
+    "name": "Security and Foreign Affairs",
+    "area": "Domain",
+    "totalCourses": 615,
+    "subDomains": [
+      {
+        "name": "Home Affairs",
+        "count": 508
+      },
+      {
+        "name": "Internal Security",
+        "count": 38
+      },
+      {
+        "name": "Defence Production",
+        "count": 24
+      },
+      {
+        "name": "Defence",
+        "count": 22
+      },
+      {
+        "name": "External Affairs",
+        "count": 11
+      },
+      {
+        "name": "Border Management",
+        "count": 3
+      },
+      {
+        "name": "Ex-Servicemen Welfare",
+        "count": 3
+      },
+      {
+        "name": "Atomic Energy",
+        "count": 2
+      },
+      {
+        "name": "Military Affairs",
+        "count": 2
+      },
+      {
+        "name": "Defence Research & Development",
+        "count": 1
+      },
+      {
+        "name": "Space",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Infrastructure",
+    "area": "Domain",
+    "totalCourses": 460,
+    "subDomains": [
+      {
+        "name": "Railways",
+        "count": 268
+      },
+      {
+        "name": "Housing and Urban Affairs",
+        "count": 119
+      },
+      {
+        "name": "Road Transport and Highways",
+        "count": 52
+      },
+      {
+        "name": "Ports, Shipping & Waterways",
+        "count": 17
+      },
+      {
+        "name": "Civil Aviation",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "Rural and Agriculture",
+    "area": "Domain",
+    "totalCourses": 429,
+    "subDomains": [
+      {
+        "name": "Agriculture and Farmers Welfare",
+        "count": 100
+      },
+      {
+        "name": "Panchayati Raj",
+        "count": 75
+      },
+      {
+        "name": "Land Resources",
+        "count": 54
+      },
+      {
+        "name": "Water Resources, River Development and Ganga Rejuvenation",
+        "count": 50
+      },
+      {
+        "name": "Drinking Water and Sanitation",
+        "count": 31
+      },
+      {
+        "name": "Rural Development",
+        "count": 26
+      },
+      {
+        "name": "Agricultural Research and Education",
+        "count": 24
+      },
+      {
+        "name": "Cooperation",
+        "count": 18
+      },
+      {
+        "name": "Animal Husbandry and Dairying",
+        "count": 18
+      },
+      {
+        "name": "Food and Public Distribution",
+        "count": 12
+      },
+      {
+        "name": "Fisheries",
+        "count": 8
+      },
+      {
+        "name": "Consumer Affairs",
+        "count": 6
+      },
+      {
+        "name": "Food Processing Industries",
+        "count": 5
+      },
+      {
+        "name": "Fertilizers",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Technology",
+    "area": "Domain",
+    "totalCourses": 384,
+    "subDomains": [
+      {
+        "name": "Telecommunications",
+        "count": 179
+      },
+      {
+        "name": "Electronics and Information Technology",
+        "count": 140
+      },
+      {
+        "name": "Science & Technology",
+        "count": 46
+      },
+      {
+        "name": "Health Research",
+        "count": 8
+      },
+      {
+        "name": "Earth Sciences",
+        "count": 7
+      },
+      {
+        "name": "Scientific & Industrial Research",
+        "count": 3
+      },
+      {
+        "name": "Defence Research & Development",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Governance",
+    "area": "Domain",
+    "totalCourses": 354,
+    "subDomains": [
+      {
+        "name": "Posts",
+        "count": 156
+      },
+      {
+        "name": "Justice",
+        "count": 91
+      },
+      {
+        "name": "Legal Affairs",
+        "count": 31
+      },
+      {
+        "name": "Personnel and Training",
+        "count": 26
+      },
+      {
+        "name": "Administrative Reforms & PG",
+        "count": 16
+      },
+      {
+        "name": "Legislative Department",
+        "count": 12
+      },
+      {
+        "name": "Pensions and Pensioners Welfare",
+        "count": 8
+      },
+      {
+        "name": "Parliamentary Affairs",
+        "count": 5
+      },
+      {
+        "name": "Election Administration and Management",
+        "count": 4
+      },
+      {
+        "name": "Information and Broadcasting",
+        "count": 3
+      },
+      {
+        "name": "Development of North Eastern Region",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Resources",
+    "area": "Domain",
+    "totalCourses": 352,
+    "subDomains": [
+      {
+        "name": "Environment, Forest and Climate Change",
+        "count": 136
+      },
+      {
+        "name": "Power",
+        "count": 87
+      },
+      {
+        "name": "Mines",
+        "count": 66
+      },
+      {
+        "name": "Coal",
+        "count": 30
+      },
+      {
+        "name": "New and Renewable Energy",
+        "count": 19
+      },
+      {
+        "name": "Petroleum and Natural Gas",
+        "count": 14
+      }
+    ]
+  },
+  {
+    "name": "Digital Fluency",
+    "area": "Functional",
+    "totalCourses": 308,
+    "subDomains": [
+      {
+        "name": "Digital Tools ( MS office, Excel, & PPT) & Platforms",
+        "count": 138
+      },
+      {
+        "name": "AI/ML tools",
+        "count": 121
+      },
+      {
+        "name": "Digital Service Design",
+        "count": 25
+      },
+      {
+        "name": "Emerging Technology",
+        "count": 24
+      }
+    ]
+  },
+  {
+    "name": "Social",
+    "area": "Domain",
+    "totalCourses": 299,
+    "subDomains": [
+      {
+        "name": "Health and Family Welfare",
+        "count": 187
+      },
+      {
+        "name": "AYUSH",
+        "count": 24
+      },
+      {
+        "name": "Sports",
+        "count": 23
+      },
+      {
+        "name": "School Education & Literacy",
+        "count": 20
+      },
+      {
+        "name": "Higher Education",
+        "count": 15
+      },
+      {
+        "name": "Culture",
+        "count": 14
+      },
+      {
+        "name": "Skill Development & Entrepreneurship",
+        "count": 14
+      },
+      {
+        "name": "Youth Affairs",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Finance and Economy",
+    "area": "Domain",
+    "totalCourses": 273,
+    "subDomains": [
+      {
+        "name": "Revenue",
+        "count": 111
+      },
+      {
+        "name": "Financial Services",
+        "count": 35
+      },
+      {
+        "name": "Economic Affairs",
+        "count": 34
+      },
+      {
+        "name": "Corporate Affairs",
+        "count": 27
+      },
+      {
+        "name": "Expenditure",
+        "count": 20
+      },
+      {
+        "name": "NITI Aayog",
+        "count": 16
+      },
+      {
+        "name": "Investment & Public Asset Management",
+        "count": 12
+      },
+      {
+        "name": "Statistics and Programme Implementation",
+        "count": 10
+      },
+      {
+        "name": "Public Enterprises",
+        "count": 8
+      }
+    ]
+  },
+  {
+    "name": "Financial Management",
+    "area": "Functional",
+    "totalCourses": 195,
+    "subDomains": [
+      {
+        "name": "Government accounts",
+        "count": 69
+      },
+      {
+        "name": "Budget Formulation & Implementation",
+        "count": 51
+      },
+      {
+        "name": "Expenditure Management",
+        "count": 44
+      },
+      {
+        "name": "Financial Management",
+        "count": 26
+      },
+      {
+        "name": "PFMS Portal Management",
+        "count": 5
+      }
+    ]
+  },
+  {
+    "name": "Public Procurement (GFR)",
+    "area": "Functional",
+    "totalCourses": 143,
+    "subDomains": [
+      {
+        "name": "Procurement Mgmt. through GeM",
+        "count": 102
+      },
+      {
+        "name": "Procurement of Services / Goods / Works",
+        "count": 25
+      },
+      {
+        "name": "Contract Management",
+        "count": 15
+      },
+      {
+        "name": "Vendor / Consultant Management",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Personal Effectiveness",
+    "area": "Behavioural",
+    "totalCourses": 125,
+    "subDomains": [
+      {
+        "name": "Stress Management",
+        "count": 106
+      },
+      {
+        "name": "Resilience",
+        "count": 15
+      },
+      {
+        "name": "Navigating Ambiguity",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "Establishment & HR",
+    "area": "Functional",
+    "totalCourses": 123,
+    "subDomains": [
+      {
+        "name": "Handling Establishment Matters",
+        "count": 69
+      },
+      {
+        "name": "Handling Fundamental Rules /Supplementary Rules",
+        "count": 22
+      },
+      {
+        "name": "Handling matters of Prevention of Sexual Harassment Policy",
+        "count": 18
+      },
+      {
+        "name": "Handling performance appraisal",
+        "count": 8
+      },
+      {
+        "name": "Handling matters of Reservations",
+        "count": 6
+      }
+    ]
+  },
+  {
+    "name": "Commerce and Industry",
+    "area": "Domain",
+    "totalCourses": 119,
+    "subDomains": [
+      {
+        "name": "Labour & Employment",
+        "count": 29
+      },
+      {
+        "name": "Heavy Industry",
+        "count": 25
+      },
+      {
+        "name": "Department for Promotion of Industry and Internal Trade",
+        "count": 18
+      },
+      {
+        "name": "Commerce",
+        "count": 16
+      },
+      {
+        "name": "Micro, Small and Medium Enterprises",
+        "count": 12
+      },
+      {
+        "name": "Steel",
+        "count": 8
+      },
+      {
+        "name": "Tourism",
+        "count": 8
+      },
+      {
+        "name": "Textiles",
+        "count": 2
+      },
+      {
+        "name": "Chemicals & Petrochemicals",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Self-Awareness",
+    "area": "Behavioural",
+    "totalCourses": 114,
+    "subDomains": [
+      {
+        "name": "Self-Analysis",
+        "count": 55
+      },
+      {
+        "name": "Purposefulness",
+        "count": 34
+      },
+      {
+        "name": "Self-Learning",
+        "count": 21
+      },
+      {
+        "name": "Self Confidence",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "Data Analytics",
+    "area": "Functional",
+    "totalCourses": 107,
+    "subDomains": [
+      {
+        "name": "Data Use and Governance",
+        "count": 53
+      },
+      {
+        "name": "Data Analysis & Visualization",
+        "count": 24
+      },
+      {
+        "name": "Data Management",
+        "count": 15
+      },
+      {
+        "name": "Data led Decision making",
+        "count": 13
+      },
+      {
+        "name": "Data Analytics",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Welfare",
+    "area": "Domain",
+    "totalCourses": 98,
+    "subDomains": [
+      {
+        "name": "Women & Child Development",
+        "count": 43
+      },
+      {
+        "name": "Social Justice and Empowerment",
+        "count": 32
+      },
+      {
+        "name": "Tribal Affairs",
+        "count": 11
+      },
+      {
+        "name": "Empowerment of Persons with Disabilities (Divyangjan)",
+        "count": 10
+      },
+      {
+        "name": "Minority Affairs",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Vigilance Administration",
+    "area": "Functional",
+    "totalCourses": 97,
+    "subDomains": [
+      {
+        "name": "Conduct Rules",
+        "count": 62
+      },
+      {
+        "name": "Proposal preparation for disciplinary proceedings",
+        "count": 17
+      },
+      {
+        "name": "Preventive Vigilance",
+        "count": 10
+      },
+      {
+        "name": "Provisions on Suspension",
+        "count": 4
+      },
+      {
+        "name": "Handling prosecution cases",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "Office Management",
+    "area": "Functional",
+    "totalCourses": 68,
+    "subDomains": [
+      {
+        "name": "Office Procedures",
+        "count": 37
+      },
+      {
+        "name": "E-Office",
+        "count": 17
+      },
+      {
+        "name": "File/DAK Management",
+        "count": 7
+      },
+      {
+        "name": "Noting & Drafting of official Communications",
+        "count": 5
+      },
+      {
+        "name": "Technical Proposal / Report writing",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Project Management",
+    "area": "Functional",
+    "totalCourses": 67,
+    "subDomains": [
+      {
+        "name": "Project Planning",
+        "count": 43
+      },
+      {
+        "name": "Project Evaluation & Monitoring",
+        "count": 22
+      },
+      {
+        "name": "Project Implementation",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Policy Architecture",
+    "area": "Functional",
+    "totalCourses": 59,
+    "subDomains": [
+      {
+        "name": "Research & Need Analysis",
+        "count": 28
+      },
+      {
+        "name": "Policy design/ amendment",
+        "count": 20
+      },
+      {
+        "name": "Policy monitoring & impact assessment",
+        "count": 11
+      }
+    ]
+  },
+  {
+    "name": "Citizen Centricity",
+    "area": "Functional",
+    "totalCourses": 54,
+    "subDomains": [
+      {
+        "name": "Citizen Partnering & Collaboration",
+        "count": 26
+      },
+      {
+        "name": "Design Thinking",
+        "count": 16
+      },
+      {
+        "name": "Political, Economic, Social, Technological Consciousness",
+        "count": 12
+      }
+    ]
+  },
+  {
+    "name": "Administration Matters",
+    "area": "Functional",
+    "totalCourses": 54,
+    "subDomains": [
+      {
+        "name": "Handling Allowances & Reimbursement",
+        "count": 19
+      },
+      {
+        "name": "Handling Leave and Travel",
+        "count": 18
+      },
+      {
+        "name": "Implementing Official Language",
+        "count": 13
+      },
+      {
+        "name": "Handling Miscellaneous Matters (Car, Residence, Personal Staff etc.)",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "Communication",
+    "area": "Behavioural",
+    "totalCourses": 53,
+    "subDomains": [
+      {
+        "name": "Active Listening",
+        "count": 26
+      },
+      {
+        "name": "Verbal & Non-Verbal Fluency",
+        "count": 18
+      },
+      {
+        "name": "Reading & Comprehension",
+        "count": 5
+      },
+      {
+        "name": "Presentation Skills",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "Team Leadership",
+    "area": "Behavioural",
+    "totalCourses": 45,
+    "subDomains": [
+      {
+        "name": "Inspiring others",
+        "count": 24
+      },
+      {
+        "name": "Sharing constructive feedback",
+        "count": 13
+      },
+      {
+        "name": "Mentoring",
+        "count": 8
+      }
+    ]
+  },
+  {
+    "name": "Collaboration",
+    "area": "Behavioural",
+    "totalCourses": 43,
+    "subDomains": [
+      {
+        "name": "Relationship Management",
+        "count": 20
+      },
+      {
+        "name": "Diversity & Inclusion",
+        "count": 19
+      },
+      {
+        "name": "Knowledge Sharing",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "Litigation Management",
+    "area": "Functional",
+    "totalCourses": 39,
+    "subDomains": [
+      {
+        "name": "Legal Know-How",
+        "count": 33
+      },
+      {
+        "name": "Court case management",
+        "count": 5
+      },
+      {
+        "name": "LIMBS Portal Management",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Decision Making",
+    "area": "Behavioural",
+    "totalCourses": 39,
+    "subDomains": [
+      {
+        "name": "Logical Reasoning",
+        "count": 30
+      },
+      {
+        "name": "Sound Judgement",
+        "count": 9
+      }
+    ]
+  },
+  {
+    "name": "Information & Communication Management",
+    "area": "Functional",
+    "totalCourses": 31,
+    "subDomains": [
+      {
+        "name": "Handling social media",
+        "count": 15
+      },
+      {
+        "name": "Dissemination of Information",
+        "count": 14
+      },
+      {
+        "name": "Management of information on official websites",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Outcome Orientation",
+    "area": "Behavioural",
+    "totalCourses": 27,
+    "subDomains": [
+      {
+        "name": "Initiative and Drive",
+        "count": 13
+      },
+      {
+        "name": "Goal Setting",
+        "count": 8
+      },
+      {
+        "name": "Commitment to Quality",
+        "count": 3
+      },
+      {
+        "name": "Accountability",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "name": "Service Orientation",
+    "area": "Behavioural",
+    "totalCourses": 26,
+    "subDomains": [
+      {
+        "name": "Service Excellence (wrt citizens)",
+        "count": 15
+      },
+      {
+        "name": "Empathy",
+        "count": 9
+      },
+      {
+        "name": "Responsiveness",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Handling RTI Matters",
+    "area": "Functional",
+    "totalCourses": 22,
+    "subDomains": [
+      {
+        "name": "RTI Responsiveness",
+        "count": 20
+      },
+      {
+        "name": "RTI Records Management",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Change Management",
+    "area": "Functional",
+    "totalCourses": 21,
+    "subDomains": [
+      {
+        "name": "Change Implementation",
+        "count": 11
+      },
+      {
+        "name": "Change Readiness",
+        "count": 9
+      },
+      {
+        "name": "Change Impact Assessment",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Solution Orientation",
+    "area": "Behavioural",
+    "totalCourses": 21,
+    "subDomains": [
+      {
+        "name": "Analytical Thinking",
+        "count": 13
+      },
+      {
+        "name": "Systems Thinking",
+        "count": 5
+      },
+      {
+        "name": "Attention to Detail",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "name": "Operational Excellence",
+    "area": "Behavioural",
+    "totalCourses": 18,
+    "subDomains": [
+      {
+        "name": "Planning & Prioritization",
+        "count": 10
+      },
+      {
+        "name": "Process Excellence",
+        "count": 5
+      },
+      {
+        "name": "Resource Management",
+        "count": 2
+      },
+      {
+        "name": "Continuous Improvement",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Creativity & Innovation",
+    "area": "Behavioural",
+    "totalCourses": 18,
+    "subDomains": [
+      {
+        "name": "Transformation Orientation",
+        "count": 12
+      },
+      {
+        "name": "Lateral Thinking",
+        "count": 6
+      }
+    ]
+  },
+  {
+    "name": "Data Protection",
+    "area": "Functional",
+    "totalCourses": 17,
+    "subDomains": [
+      {
+        "name": "Data Use and Governance",
+        "count": 17
+      }
+    ]
+  },
+  {
+    "name": "Collaborative Leadership",
+    "area": "Behavioural",
+    "totalCourses": 12,
+    "subDomains": [
+      {
+        "name": "Conflict Management",
+        "count": 7
+      },
+      {
+        "name": "Influencing and Negotiation",
+        "count": 5
+      }
+    ]
+  },
+  {
+    "name": "Strategic Leadership",
+    "area": "Behavioural",
+    "totalCourses": 10,
+    "subDomains": [
+      {
+        "name": "Sustainable mindset",
+        "count": 5
+      },
+      {
+        "name": "Executive Presence",
+        "count": 2
+      },
+      {
+        "name": "Forward Thinking",
+        "count": 2
+      },
+      {
+        "name": "Global mindset",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Handling Parliamentary Matters",
+    "area": "Functional",
+    "totalCourses": 10,
+    "subDomains": [
+      {
+        "name": "Submission of briefs, supply of information",
+        "count": 8
+      },
+      {
+        "name": "Maintaining records of parliamentary matters",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Monitoring & Evaluation",
+    "area": "Functional",
+    "totalCourses": 9,
+    "subDomains": [
+      {
+        "name": "Evaluation of outcomes / outputs",
+        "count": 5
+      },
+      {
+        "name": "Creation of M&E Framework",
+        "count": 4
+      }
+    ]
+  },
+  {
+    "name": "Grievance Redressal",
+    "area": "Functional",
+    "totalCourses": 8,
+    "subDomains": [
+      {
+        "name": "Public Grievance Handling",
+        "count": 7
+      },
+      {
+        "name": "CPGRAMS Portal Management",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Government Program Formulation",
+    "area": "Functional",
+    "totalCourses": 8,
+    "subDomains": [
+      {
+        "name": "Scheme/Program Design",
+        "count": 3
+      },
+      {
+        "name": "Implementation & Outreach",
+        "count": 2
+      },
+      {
+        "name": "Feasibility & Risk Assessment",
+        "count": 2
+      },
+      {
+        "name": "Research & Need Analysis",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Material Management (GFR)",
+    "area": "Functional",
+    "totalCourses": 7,
+    "subDomains": [
+      {
+        "name": "Inventory Management",
+        "count": 4
+      },
+      {
+        "name": "Maintenance and Disposal of materials",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "name": "Cabinet note preparation",
+    "area": "Functional",
+    "totalCourses": 6,
+    "subDomains": [
+      {
+        "name": "Cabinet note writing",
+        "count": 5
+      },
+      {
+        "name": "Rules of business (AoB/ToB)",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "name": "Governance & Public Administration",
+    "area": "Domain",
+    "totalCourses": 2,
+    "subDomains": [
+      {
+        "name": "General Administration",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "name": "Technology & Digital Governance",
+    "area": "Domain",
+    "totalCourses": 1,
+    "subDomains": [
+      {
+        "name": "Data Science & Information Technology",
+        "count": 1
+      }
+    ]
+  }
+]

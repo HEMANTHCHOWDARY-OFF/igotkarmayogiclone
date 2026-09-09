@@ -73,16 +73,19 @@ before the competency loop actually works.
 
 # 3. Phase Overview
 
-[COMPLETED - ALL 11 CORE MVP FEATURES]
+```text
+[COMPLETED - ALL 11 CORE MVP FEATURES & ENHANCEMENTS]
 ✓ PHASE 0  → Project Foundation & Planning
 ✓ PHASE 1  → Repository & Development Environment
 ✓ PHASE 2  → Supabase Backend Foundation
 ✓ PHASE 3  → Authentication & User Management (Email/Password & Google OAuth)
 ✓ PHASE A  → (Features 2 & 7a) Competency Diagnostic & Assessment Engine (MoSPI FrAC & Auto-Evaluation) [APPROVED]
 ✓ PHASE B  → (Feature 3) AI Competency Gap Analysis Engine & Dynamic Radar Chart [APPROVED]
-✓ PHASE C  → (Features 8, 9 & 11) Personalized Recommendations, 22 iGOT Courses & roadmap.sh Interactive Path [APPROVED]
+✓ PHASE C  → (Features 8, 9 & 11) Personalized Recommendations, iGOT Courses & Interactive Path [APPROVED]
 ✓ PHASE D  → (Features 4 & 5) Admin Document Ingestion & AI Question Generation (Verifiable Citations & HITL Review) [APPROVED]
-✓ PHASE E  → (Features 6, 7b & 10) Closed-Loop Micro-Module Quiz Taking, Instant Evaluation & Dashboard Skill Health Score [COMPLETED - AWAITING USER APPROVAL]
+✓ PHASE E  → (Features 6, 7b & 10) Closed-Loop Micro-Module Quiz Taking, Instant Evaluation & Dashboard Skill Health Score [APPROVED]
+✓ PHASE G  → 5,400+ Complete iGOT Karmayogi Course Catalog & Conversational AI Curriculum Recommender (Dual-Mode Selection) [COMPLETED]
+✓ PHASE H  → roadmap.sh Multi-Tier Block Hierarchy & Deterministic Gap Analysis Calculation Engine (Authentic Progress Tracking) [COMPLETED]
 
 [OPTIONAL ADVANCED POST-MVP EXTENSIONS]
   PHASE F  → (Phases 10, 11, 13, 14) Full-scale pgvector RAG Embedding Pipeline, Verifiable PDF Certificates & Pan-Ministry Aggregates
@@ -1654,7 +1657,49 @@ Explainable
 
 ------------------------------------------------------------------------
 
-# 38. Final Principle
+# 37. PHASE G — 5,400+ Complete iGOT Karmayogi Catalog & Conversational AI Curriculum Recommender
+
+### Objective
+Provide comprehensive curriculum scale matching the national iGOT Karmayogi repository while organizing selection through an intuitive dual-section user experience.
+
+### Delivered Capabilities
+1. **5,400+ Unified Course Catalog (`src/data/igotAllCourses.json`, `src/services/karmayogiCoursesService.ts`)**:
+   - Complete multi-ministry catalog integration covering 14 primary central and state civil service domains.
+   - 3-tier taxonomy (`src/data/igotTaxonomy.json`) structuring domains, sub-domains, and course items.
+2. **Dual-Mode Selection Architecture (`src/pages/student/InterestedCourses.tsx`)**:
+   - **Section 1 (Manual Exploration)**: Clear hierarchical tree drilldown with multi-selection chips, duration indicators, and instant keyword filter.
+   - **Section 2 (AI Recommender)**: Groq LLaMA 3.3 70B conversational advisor analyzing learner aspirations to formulate targeted curriculum bundles.
+3. **Curriculum State Propagation**:
+   - Selected courses configure the student's active competency profile, gap analysis, roadmaps, and dashboard metrics.
+
+------------------------------------------------------------------------
+
+# 38. PHASE H — roadmap.sh Multi-Tier Block Hierarchy & Deterministic Gap Analysis Calculation Engine
+
+### Objective
+Upgrade basic roadmaps into an engaging visual block hierarchy, establish mathematical accuracy across gap variance formulas, and ensure strictly authentic progress tracking.
+
+### Delivered Capabilities
+1. **roadmap.sh Block Hierarchy Canvas (`src/pages/student/LearningPath.tsx`, `src/services/aiRoadmapService.ts`)**:
+   - Multi-tier visual hierarchy with modules, sub-concepts, and statutory milestones.
+   - Interactive branches, status toggling, and slide-over drawer with integrated AI Chat Tutor.
+2. **Real Course Progress Tracking Service (`src/services/courseProgressService.ts`)**:
+   - Centralized persistent store (`gyanmarg_course_real_progress_v1`).
+   - Strict rule: Newly enrolled courses initialize at **0% progress** and `"not_started"` with **0.0 study hours**. No fake 40%, 50%, or 100% completions.
+3. **Multi-Axis Radar Chart Polygon Preservation (`src/pages/student/GapAnalysis.tsx`, `src/pages/student/SkillProfile.tsx`)**:
+   - Augmented 5-pillar civil service competency polygon when $\le 2$ domains are selected, preventing Recharts polar chart from collapsing into a single line.
+   - Distinctive `★` marking for active enrolled focus domain.
+4. **Precision Calculation Engine & Terminology Clarity**:
+   - Distinct formulas:
+     - **Competency Deficit** $= \text{Target Benchmark} - \text{Demonstrated Baseline}$ (e.g. $85\% - 45\% = 40\%$ Deficit).
+     - **Course Progress** $= (\text{Completed Modules} / \text{Total Modules}) \times 100 = 0\%$ (until lessons are completed).
+   - Replaced confusing badges (`40% Gap` → `40% Deficit (Needs Study)`).
+   - Updated quick actions to "Explore 5,400+ Catalog Courses".
+   - Earned certificates require authentic 100% course completion.
+
+------------------------------------------------------------------------
+
+# 39. Final Principle
 
 > **Build the smallest complete competency-development system first.
 > Then make it intelligent, beautiful, scalable, and impressive.**

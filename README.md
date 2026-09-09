@@ -17,56 +17,63 @@ GyanMarg AI is designed around an unbroken competency loop rather than isolated 
                                               |
                                               v
                   +-------------------------------------------------------+
-                  |    2. Baseline Diagnostic Assessment (10 Scenarios)   |
+                  |     2. Interested Courses Onboarding (Calibration)    |
                   +-------------------------------------------------------+
                                               |
                                               v
                   +-------------------------------------------------------+
-                  |  3. Automatic Evaluation & Citations (Page-Grounded)  |
+                  |    3. Baseline Diagnostic Assessment (10 Scenarios)   |
                   +-------------------------------------------------------+
                                               |
                                               v
                   +-------------------------------------------------------+
-                  |    4. AI Competency Gap Analysis (Dual-Polygon Radar) |
+                  |  4. Automatic Evaluation & Citations (Page-Grounded)  |
                   +-------------------------------------------------------+
                                               |
                                               v
                   +-------------------------------------------------------+
-                  |  5. Gap-Prioritized Recommendations (22 Courses)      |
+                  |    5. AI Competency Gap Analysis (Dual-Polygon Radar) |
                   +-------------------------------------------------------+
                                               |
                                               v
                   +-------------------------------------------------------+
-                  |   6. Sequenced 4-Phase Learning Path (roadmap.sh)    |
+                  |  6. Gap-Prioritized Recommendations (22 Courses)      |
+                  +-------------------------------------------------------+
+                                              |
+                                              v
+                  +-------------------------------------------------------+
+                  |   7. Sequenced 4-Phase Learning Path (roadmap.sh)    |
                   +-------------------------------------------------------+
                                               |
                      +------------------------+------------------------+
                      |                                                 |
                      v                                                 v
 +------------------------------------------+     +------------------------------------------+
-| 7. Admin Ingestion (PDF/DOC Guidelines)  |     | 9. Interactive Practice Knowledge Check  |
+| 8. Admin Ingestion (PDF/DOC Guidelines)  |     | 10. Interactive Practice Knowledge Check |
 +------------------------------------------+     +------------------------------------------+
                      |                                                 |
                      v                                                 v
 +------------------------------------------+     +------------------------------------------+
-| 8. AI Question Synthesizer & HITL Review | --> | 10. Instant Auto-Evaluation & Feedback   |
+| 9. AI Question Synthesizer & HITL Review | --> | 11. Instant Auto-Evaluation & Feedback   |
 +------------------------------------------+     +------------------------------------------+
                                                                        |
                                                                        v
                                                  +------------------------------------------+
-                                                 | 11. Learner Dashboard & Skill Health (+X)|
+                                                 | 12. Learner Dashboard & Skill Health (+X)|
                                                  +------------------------------------------+
 ```
 
+> **Student Onboarding Flow:** After student authentication, GyanMarg guides the learner through an interested-course selection step before entering the student learning dashboard. Course preferences are persisted for personalization, while the onboarding screen is intentionally presented at the start of each demo session.
+
 ---
 
-## 2. The 11 Core MVP Features
+## 2. The Core MVP Features
 
-All 11 Core MVP features defined in the engineering specifications are 100% implemented, integrated, and verified:
+All Core MVP features defined in the engineering specifications are 100% implemented, integrated, and verified:
 
 | # | Feature | Description | Primary Source |
 | :-: | :--- | :--- | :--- |
-| **1** | **User Authentication & RBAC** | Role-based routing (`student` vs `admin`), email/password authentication, live Google OAuth 2.0 integration, and 1-click Demo Account mode. | `src/context/AuthContext.tsx`, `src/pages/Login.tsx` |
+| **1** | **User Authentication & Course Onboarding** | Role-based routing (`student` vs `admin`), email/password authentication, live Google OAuth 2.0, 1-click Demo switchers, and mandatory course interest calibration onboarding (`/student/interested-courses`). | `src/context/AuthContext.tsx`, `src/pages/Login.tsx`, `src/pages/student/InterestedCourses.tsx` |
 | **2** | **Competency Assessment Interface** | 10 realistic multi-stage sampling, SQL windowing, and data ethics scenarios with a 20-minute countdown timer and navigation grid. | `src/pages/student/Assessment.tsx` |
 | **3** | **AI Competency Gap Analysis** | Dynamic $\text{Gap} = \max(0, \text{Target} - \text{Current})$ formula, multi-axis Recharts dual-polygon RadarChart, Gap Variance BarChart, and Gap Matrix Table. | `src/pages/student/GapAnalysis.tsx` |
 | **4** | **Document Ingestion Workstation** | Administration workstation supporting PDF and DOC ingestion with chapter parsing, Table of Contents inspection, and metadata tracking. | `src/pages/admin/AssessmentManagement.tsx` |

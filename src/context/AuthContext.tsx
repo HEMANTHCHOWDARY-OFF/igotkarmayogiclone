@@ -1,6 +1,17 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 import type { User, Session, AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import {
+  getSavedCoursePreferences,
+  getSavedLearnerCalibration,
+  saveLearnerCalibration,
+  saveCoursePreferences,
+  clearSessionOnboarding,
+  DEFAULT_DEMO_COURSE_IDS,
+  DEFAULT_DEMO_DOMAINS,
+  DEFAULT_DEMO_SUBDOMAINS,
+  type LearnerCalibrationData,
+} from "@/utils/coursePreferences";
 
 export interface UserProfile {
   id: string;
@@ -12,6 +23,10 @@ export interface UserProfile {
   year?: string;
   avatarUrl?: string;
   initials: string;
+  interestedCourses?: (string | number)[];
+  interestedDomains?: string[];
+  interestedSubDomains?: string[];
+  aiRecommendations?: any;
 }
 
 export interface SignUpParams {
@@ -38,6 +53,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   loginAsDemo: (role: "student" | "admin") => void;
   updateProfileLocally: (updates: Partial<UserProfile>) => void;
+  savePreferences: (courseIds: (string | number)[]) => Promise<{ success: boolean; error?: string }>;
+  saveCalibration: (data: LearnerCalibrationData) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,7 +72,16 @@ function getInitials(name: string, fallbackEmail = ""): string {
 }
 
 function deriveProfile(user: User | null, demoProfile: UserProfile | null): UserProfile | null {
-  if (demoProfile) return demoProfile;
+  if (demoProfile) {
+    const calib = getSavedLearnerCalibration(demoProfile.id);
+    return {
+      ...demoProfile,
+      interestedCourses: calib.courseIds.length > 0 ? calib.courseIds : demoProfile.interestedCourses || [],
+      interestedDomains: calib.domains.length > 0 ? calib.domains : demoProfile.interestedDomains || [],
+      interestedSubDomains: calib.subDomains.length > 0 ? calib.subDomains : demoProfile.interestedSubDomains || [],
+      aiRecommendations: calib.aiAnalysis || demoProfile.aiRecommendations,
+    };
+  }
   if (!user) return null;
 
   const meta = user.user_metadata || {};
@@ -68,6 +94,12 @@ function deriveProfile(user: User | null, demoProfile: UserProfile | null): User
   const role: "student" | "admin" =
     meta.role === "admin" || email.toLowerCase().includes("admin") ? "admin" : "student";
 
+  const calib = getSavedLearnerCalibration(user.id);
+  const courses = calib.courseIds.length > 0 ? calib.courseIds : (meta.interested_courses || []);
+  const domains = calib.domains.length > 0 ? calib.domains : (meta.interested_domains || []);
+  const subDomains = calib.subDomains.length > 0 ? calib.subDomains : (meta.interested_subdomains || []);
+  const aiRecommendations = calib.aiAnalysis || meta.ai_recommendations;
+
   return {
     id: user.id,
     email,
@@ -78,6 +110,10 @@ function deriveProfile(user: User | null, demoProfile: UserProfile | null): User
     year: meta.year || "",
     avatarUrl: meta.avatar_url || meta.picture || "",
     initials: getInitials(fullName, email),
+    interestedCourses: courses,
+    interestedDomains: domains,
+    interestedSubDomains: subDomains,
+    aiRecommendations,
   };
 }
 
@@ -220,6 +256,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     setLoading(true);
+    clearSessionOnboarding(user?.id || demoProfile?.id);
     localStorage.removeItem(DEMO_STORAGE_KEY);
     setDemoProfile(null);
     try {
@@ -244,6 +281,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       year: "2024",
       avatarUrl: "",
       initials: "PS",
+      interestedCourses: DEFAULT_DEMO_COURSE_IDS,
+      interestedDomains: DEFAULT_DEMO_DOMAINS,
+      interestedSubDomains: DEFAULT_DEMO_SUBDOMAINS,
     } : {
       id: "demo-admin-001",
       email: "anand.kumar@gov.in",
@@ -272,6 +312,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const savePreferences = async (courseIds: (string | number)[]) => {
+    const activeId = user?.id || demoProfile?.id;
+    if (!activeId) return { success: false, error: "No active user session found" };
+    const res = await saveCoursePreferences(activeId, courseIds, isDemo);
+    if (res.success) {
+      if (isDemo || demoProfile) {
+        updateProfileLocally({ interestedCourses: courseIds });
+      }
+    }
+    return res;
+  };
+
+  const saveCalibration = async (data: LearnerCalibrationData) => {
+    const activeId = user?.id || demoProfile?.id;
+    if (!activeId) return { success: false, error: "No active user session found" };
+    const res = await saveLearnerCalibration(activeId, data, isDemo);
+    if (res.success) {
+      if (isDemo || demoProfile) {
+        updateProfileLocally({
+          interestedCourses: data.courseIds,
+          interestedDomains: data.domains,
+          interestedSubDomains: data.subDomains,
+          aiRecommendations: data.aiAnalysis,
+        });
+      }
+    }
+    return res;
+  };
+
   const profile = useMemo(() => deriveProfile(user, demoProfile), [user, demoProfile]);
   const isDemo = Boolean(demoProfile && !user);
   const isAuthenticated = Boolean(user || demoProfile);
@@ -291,6 +360,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signOut,
       loginAsDemo,
       updateProfileLocally,
+      savePreferences,
+      saveCalibration,
     }),
     [user, session, profile, loading, isAuthenticated, isDemo]
   );

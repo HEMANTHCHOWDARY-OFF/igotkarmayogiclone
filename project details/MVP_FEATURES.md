@@ -37,7 +37,8 @@ $$\text{Authenticate} \longrightarrow \text{Assess Baseline} \longrightarrow \te
 
 ```mermaid
 flowchart TD
-    F1["1. User Authentication & Profiles"] --> F2["2. Competency Assessment"]
+    F1["1. User Authentication & Profiles"] --> F_ONBOARD["Student Course Interest Selection (Onboarding)"]
+    F_ONBOARD --> F2["2. Competency Assessment"]
     F2 --> F3["3. AI Competency Gap Analysis"]
     F3 --> F8["8. Personalized Course Recommendations"]
     F8 --> F9["9. iGOT Course Mapping (Mock Only)"]
@@ -56,11 +57,12 @@ flowchart TD
 
 ---
 
-### Feature 1: User Authentication & Profiles
+### Feature 1: User Authentication, Profiles & Course Interest Onboarding
 - **Role-Based Access Control (RBAC):** Distinct authentication states for **Learners** (Statistical Officers / Trainees) and **Administrators** (MoSPI / DIID / NSSTA Faculty).
 - **Authentication Methods:** Email/password authentication, live Google OAuth 2.0 integration, and instant 1-click Demo Account switchers for jury evaluation.
-- **Learner Profiles:** Captures user metadata including full name, designation/cadre (e.g., Statistical Officer, Senior Statistical Officer), posting/division (FOD, SDRD, NAD, ESD), target career track, and target achievement year.
-- **Route Protection:** Branded route guards (`ProtectedRoute`) securing student and administrative portals.
+- **Learner Profiles:** Captures user metadata including full name, designation/cadre (e.g., Statistical Officer, Senior Statistical Officer), posting/division (FOD, SDRD, NAD, ESD), target career track, target achievement year, and persisted interested course preferences.
+- **Student Course Selection Onboarding (`/student/interested-courses`):** Dedicated calibration step between authentication and dashboard entry. Supports persistent storage in Supabase and session-level onboarding presentation (`sessionStorage`) for repeated jury testing.
+- **Route Protection:** Branded route guards (`ProtectedRoute`) securing student and administrative portals and redirecting unboarded student sessions.
 
 ### Feature 2: Competency Assessment
 - **Baseline Diagnostic Engine:** Comprehensive diagnostic testing evaluating initial functional competency across core statistical domains.

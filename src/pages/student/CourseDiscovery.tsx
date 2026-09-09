@@ -1,16 +1,14 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
-import { IGOT_COURSES, IGOTCourse } from "@/data/igotCourses";
+import {
+  queryKarmayogiCourses,
+  igotTaxonomy,
+  TOTAL_IGOT_COURSES_COUNT,
+  type IGOTCatalogCourse,
+} from "@/services/karmayogiCoursesService";
 import { useCompetency } from "@/context/CompetencyContext";
-
-const domains = [
-  "Applied Statistics & Sampling Theory",
-  "SQL & Database Operations",
-  "Python & Data Analytics",
-  "GIS & Spatial Analysis",
-  "Public Data Ethics & DPDP Act 2023",
-];
+import { useAuth } from "@/context/AuthContext";
 
 const levels = ["Beginner", "Intermediate", "Advanced"];
 const durations = ["< 6h", "6–10h", "10h+"];
@@ -24,15 +22,23 @@ const levelColor = (level: string) => {
 export default function CourseDiscovery() {
   const navigate = useNavigate();
   const { getGapMetrics } = useCompetency();
+  const { profile, saveCalibration } = useAuth();
 
   const [search, setSearch] = useState("");
-  const [selDomains, setSelDomains] = useState<string[]>([]);
+  const [selectedDomain, setSelectedDomain] = useState<string>("all");
+  const [selectedSubDomain, setSelectedSubDomain] = useState<string>("all");
   const [selLevels, setSelLevels] = useState<string[]>([]);
   const [selDurations, setSelDurations] = useState<string[]>([]);
   const [onlyTPAC, setOnlyTPAC] = useState(false);
-  const [sort, setSort] = useState("GapPriority");
+  const [page, setPage] = useState<number>(1);
+  const [sort, setSort] = useState("Recommended");
 
-  const gapMetrics = useCompetency().getGapMetrics();
+  // Track locally selected courses
+  const selectedCourseIds = useMemo(() => {
+    return (profile?.interestedCourses || []).map(String);
+  }, [profile?.interestedCourses]);
+
+  const gapMetrics = getGapMetrics();
   const gapMap = useMemo(() => {
     const map: Record<string, { gap: number; severity: "Critical" | "Minor" | "Met" }> = {};
     gapMetrics.forEach((m) => {
@@ -41,88 +47,62 @@ export default function CourseDiscovery() {
     return map;
   }, [gapMetrics]);
 
-  const toggle = (arr: string[], val: string, set: (v: string[]) => void) => {
-    set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
+  // Sub-domains for currently active domain
+  const activeSubDomains = useMemo(() => {
+    if (selectedDomain === "all") return [];
+    const dom = igotTaxonomy.find((d) => d.name === selectedDomain);
+    return dom?.subDomains || [];
+  }, [selectedDomain]);
+
+  // Recommended titles from profile AI recommendations
+  const recommendedTitles = useMemo(() => {
+    const recs = profile?.aiRecommendations?.recommendedCourses;
+    if (Array.isArray(recs)) {
+      return recs.map((r: any) => r.title);
+    }
+    return [];
+  }, [profile?.aiRecommendations]);
+
+  // Filter courses via queryKarmayogiCourses
+  const catalogResult = useMemo(() => {
+    const domainsFilter = selectedDomain !== "all" ? [selectedDomain] : [];
+    const subDomainsFilter = selectedSubDomain !== "all" ? [selectedSubDomain] : [];
+    const levelFilter = selLevels.length === 1 ? selLevels[0] : "all";
+
+    return queryKarmayogiCourses({
+      query: search,
+      domains: domainsFilter,
+      subDomains: subDomainsFilter,
+      level: levelFilter,
+      page,
+      pageSize: 18,
+      recommendedTitles,
+    });
+  }, [search, selectedDomain, selectedSubDomain, selLevels, page, recommendedTitles]);
+
+  // Handle toggling course into/out of student's learning path
+  const handleToggleCourse = async (courseId: string) => {
+    const isCurrentlySelected = selectedCourseIds.includes(courseId);
+    const newCourseIds = isCurrentlySelected
+      ? selectedCourseIds.filter((id) => id !== courseId)
+      : [...selectedCourseIds, courseId];
+
+    await saveCalibration({
+      courseIds: newCourseIds,
+      domains: profile?.interestedDomains || [],
+      subDomains: profile?.interestedSubDomains || [],
+      aiAnalysis: profile?.aiRecommendations,
+    });
   };
 
-  // Filter and sort courses
-  const filteredCourses = useMemo(() => {
-    let result = IGOT_COURSES.filter((c) => {
-      if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.desc.toLowerCase().includes(search.toLowerCase()) && !c.courseCode.toLowerCase().includes(search.toLowerCase())) {
-        return false;
-      }
-      if (selDomains.length && !selDomains.includes(c.domain)) return false;
-      if (selLevels.length && !selLevels.includes(c.level)) return false;
-      if (onlyTPAC && !c.tpacEndorsed) return false;
-      if (selDurations.length) {
-        const matched = selDurations.some((d) => {
-          if (d === "< 6h") return c.duration < 6;
-          if (d === "6–10h") return c.duration >= 6 && c.duration <= 10;
-          return c.duration > 10;
-        });
-        if (!matched) return false;
-      }
-      return true;
-    });
-
-    if (sort === "GapPriority") {
-      result.sort((a, b) => {
-        const gapA = gapMap[a.domainId]?.gap || 0;
-        const gapB = gapMap[b.domainId]?.gap || 0;
-        return gapB - gapA; // Largest gap first
-      });
-    } else if (sort === "Rating") {
-      result.sort((a, b) => b.rating - a.rating);
-    } else if (sort === "Enrolled") {
-      result.sort((a, b) => b.enrolled - a.enrolled);
-    } else if (sort === "DurationAsc") {
-      result.sort((a, b) => a.duration - b.duration);
-    }
-
-    return result;
-  }, [search, selDomains, selLevels, selDurations, onlyTPAC, sort, gapMap]);
-
-  // Identify highest gap domain for recommendation banner
   const highestGapMetric = gapMetrics[0];
-
-  const CheckItem = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) => (
-    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 8 }}>
-      <div
-        onClick={onChange}
-        style={{
-          width: 16,
-          height: 16,
-          borderRadius: 4,
-          border: `2px solid ${checked ? C.s1 : C.border}`,
-          background: checked ? C.s1 : "transparent",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          cursor: "pointer",
-        }}
-      >
-        {checked && <span style={{ color: "#fff", fontSize: 10, lineHeight: 1 }}>✓</span>}
-      </div>
-      <span style={{ fontSize: 12.5, color: C.dark, lineHeight: 1.3 }}>{label}</span>
-    </label>
-  );
-
-  const FilterSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>
-        {title}
-      </div>
-      {children}
-    </div>
-  );
 
   return (
     <div style={{ padding: "28px 32px", background: C.bg, minHeight: "100vh", fontFamily: FONT.body, display: "flex", gap: 24 }}>
       {/* Left Filter Sidebar */}
       <aside
         style={{
-          width: 220,
+          width: 250,
           flexShrink: 0,
           background: C.surface,
           border: `1px solid ${C.border}`,
@@ -131,112 +111,219 @@ export default function CourseDiscovery() {
           alignSelf: "flex-start",
           position: "sticky",
           top: 24,
+          maxHeight: "calc(100vh - 48px)",
+          overflowY: "auto",
         }}
       >
-        <div style={{ fontWeight: 700, color: C.dark, fontSize: 15, marginBottom: 16, fontFamily: FONT.display }}>
-          Catalog Filters
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, color: C.dark, fontSize: 15, fontFamily: FONT.display }}>
+            Catalog Filters
+          </div>
+          {(selectedDomain !== "all" || search || selLevels.length > 0) && (
+            <button
+              onClick={() => {
+                setSelectedDomain("all");
+                setSelectedSubDomain("all");
+                setSearch("");
+                setSelLevels([]);
+                setPage(1);
+              }}
+              style={{
+                background: "transparent",
+                border: "none",
+                fontSize: 11,
+                color: C.accent,
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Reset All
+            </button>
+          )}
         </div>
 
-        {/* Search */}
+        {/* Quick Search */}
         <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 }}>
+            Search Curriculum
+          </div>
           <input
+            type="text"
+            placeholder="Title, keyword, ministry..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search 20+ courses…"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             style={{
               width: "100%",
-              padding: "8px 10px",
-              border: `1px solid ${C.border}`,
+              padding: "9px 12px",
               borderRadius: 8,
-              fontSize: 12.5,
-              color: C.dark,
-              background: C.bg,
-              outline: "none",
-              boxSizing: "border-box",
+              border: `1px solid ${C.border}`,
+              fontSize: 13,
               fontFamily: FONT.body,
+              outline: "none",
+              background: C.bg,
+              color: C.dark,
+              boxSizing: "border-box",
             }}
           />
         </div>
 
-        {/* TPAC Endorsement Filter */}
-        <div style={{ marginBottom: 18, padding: "10px", background: "#1B3D290F", borderRadius: 8, border: "1px solid #1B3D2925" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={onlyTPAC}
-              onChange={(e) => setOnlyTPAC(e.target.checked)}
-              style={{ width: 15, height: 15, accentColor: "#1B3D29" }}
-            />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#1B3D29" }}>
-              🎖️ NSSTA TPAC Endorsed Only
-            </span>
+        {/* Domain Filter */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 }}>
+            Domain ({igotTaxonomy.length})
+          </div>
+          <select
+            value={selectedDomain}
+            onChange={(e) => {
+              setSelectedDomain(e.target.value);
+              setSelectedSubDomain("all");
+              setPage(1);
+            }}
+            style={{
+              width: "100%",
+              padding: "9px 10px",
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.bg,
+              fontSize: 12.5,
+              fontFamily: FONT.body,
+              color: C.dark,
+              fontWeight: 500,
+              outline: "none",
+              cursor: "pointer",
+            }}
+          >
+            <option value="all">All Domains ({TOTAL_IGOT_COURSES_COUNT.toLocaleString()})</option>
+            {igotTaxonomy.map((d) => (
+              <option key={d.name} value={d.name}>
+                {d.name} ({d.totalCourses})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Sub-Domain Filter (if domain chosen) */}
+        {activeSubDomains.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 }}>
+              Sub-Domain
+            </div>
+            <select
+              value={selectedSubDomain}
+              onChange={(e) => {
+                setSelectedSubDomain(e.target.value);
+                setPage(1);
+              }}
+              style={{
+                width: "100%",
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: C.bg,
+                fontSize: 12,
+                fontFamily: FONT.body,
+                color: C.dark,
+                outline: "none",
+                cursor: "pointer",
+              }}
+            >
+              <option value="all">All Sub-Domains ({activeSubDomains.length})</option>
+              {activeSubDomains.map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name} ({s.count})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Difficulty Level */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 }}>
+            Proficiency Level
+          </div>
+          {levels.map((lvl) => {
+            const isChecked = selLevels.includes(lvl);
+            return (
+              <label
+                key={lvl}
+                onClick={() => {
+                  setSelLevels((prev) =>
+                    prev.includes(lvl) ? prev.filter((l) => l !== lvl) : [...prev, lvl]
+                  );
+                  setPage(1);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  marginBottom: 6,
+                  fontSize: 12.5,
+                  color: C.dark,
+                }}
+              >
+                <input type="checkbox" checked={isChecked} readOnly style={{ accentColor: C.s1 }} />
+                <span>{lvl}</span>
+              </label>
+            );
+          })}
+        </div>
+
+        {/* TPAC Endorsement */}
+        <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+          <label
+            onClick={() => setOnlyTPAC(!onlyTPAC)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+              fontSize: 12.5,
+              fontWeight: 600,
+              color: "#1B3D29",
+            }}
+          >
+            <input type="checkbox" checked={onlyTPAC} readOnly style={{ accentColor: "#1B3D29" }} />
+            <span>🎖️ TPAC Endorsed Only</span>
           </label>
         </div>
 
-        <FilterSection title="Competency Domain">
-          {domains.map((d) => (
-            <CheckItem
-              key={d}
-              label={d}
-              checked={selDomains.includes(d)}
-              onChange={() => toggle(selDomains, d, setSelDomains)}
-            />
-          ))}
-        </FilterSection>
-
-        <FilterSection title="Difficulty Level">
-          {levels.map((l) => (
-            <CheckItem
-              key={l}
-              label={l}
-              checked={selLevels.includes(l)}
-              onChange={() => toggle(selLevels, l, setSelLevels)}
-            />
-          ))}
-        </FilterSection>
-
-        <FilterSection title="Duration">
-          {durations.map((d) => (
-            <CheckItem
-              key={d}
-              label={d}
-              checked={selDurations.includes(d)}
-              onChange={() => toggle(selDurations, d, setSelDurations)}
-            />
-          ))}
-        </FilterSection>
-
-        <button
-          onClick={() => {
-            setSearch("");
-            setSelDomains([]);
-            setSelLevels([]);
-            setSelDurations([]);
-            setOnlyTPAC(false);
-          }}
-          style={{
-            width: "100%",
-            padding: "8px",
-            background: "transparent",
-            border: `1px solid ${C.border}`,
-            borderRadius: 8,
-            fontSize: 12,
-            color: C.muted,
-            cursor: "pointer",
-            fontFamily: FONT.body,
-          }}
-        >
-          Reset Filters
-        </button>
+        {/* Action button to Interested Courses */}
+        <div style={{ marginTop: 22, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+          <button
+            onClick={() => navigate("/student/interested-courses")}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              background: `${C.accent}15`,
+              color: C.accent,
+              border: `1px solid ${C.accent}40`,
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            ✨ AI Selection Advisor
+          </button>
+        </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main style={{ flex: 1, display: "flex", flexDirection: "column", gap: 20 }}>
-        {/* Header & Gap Recommendation Banner */}
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+        {/* Header Banner */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                 <span
                   style={{
                     fontSize: 11,
@@ -249,39 +336,47 @@ export default function CourseDiscovery() {
                     borderRadius: 4,
                   }}
                 >
-                  GyanMarg Universal Learning Catalog
+                  iGOT Karmayogi National Catalog
                 </span>
-                <span style={{ fontSize: 12, color: C.muted }}>22 Specialized Programs</span>
+                <span style={{ fontSize: 12, color: C.muted }}>
+                  {TOTAL_IGOT_COURSES_COUNT.toLocaleString()} Verified Programs • 47 Domains
+                </span>
               </div>
               <h1 style={{ fontFamily: FONT.display, fontSize: 26, fontWeight: 800, margin: 0, color: C.dark }}>
-                Personalized Course Recommendations
+                Course Discovery & Capacity Building
               </h1>
             </div>
 
-            {/* Sort Dropdown */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 13, color: C.muted }}>Sort by:</span>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
+            {/* Selected Courses Counter / Nav to Roadmap */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
                 style={{
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  border: `1px solid ${C.border}`,
-                  background: C.surface,
-                  fontSize: 13,
-                  fontFamily: FONT.body,
-                  color: C.dark,
+                  padding: "6px 14px",
+                  borderRadius: 20,
+                  background: selectedCourseIds.length > 0 ? "#EBF5F0" : C.surface,
+                  border: `1px solid ${selectedCourseIds.length > 0 ? C.s1 : C.border}`,
+                  fontSize: 12.5,
                   fontWeight: 600,
-                  outline: "none",
+                  color: selectedCourseIds.length > 0 ? C.s1 : C.muted,
+                }}
+              >
+                🎯 {selectedCourseIds.length} Selected in Your Learning Path
+              </div>
+              <button
+                onClick={() => navigate("/student/learning-path")}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  background: C.accent,
+                  color: "#fff",
+                  border: "none",
+                  fontSize: 12.5,
+                  fontWeight: 700,
                   cursor: "pointer",
                 }}
               >
-                <option value="GapPriority">🎯 Personalized (Gap Priority)</option>
-                <option value="Rating">⭐ Rating (Highest)</option>
-                <option value="Enrolled">👥 Most Enrolled</option>
-                <option value="DurationAsc">⏱️ Duration (Shortest)</option>
-              </select>
+                View Roadmap →
+              </button>
             </div>
           </div>
 
@@ -291,7 +386,7 @@ export default function CourseDiscovery() {
               style={{
                 background: "#1B3D29",
                 borderRadius: 12,
-                padding: "16px 20px",
+                padding: "14px 18px",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",
@@ -303,8 +398,8 @@ export default function CourseDiscovery() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
                   <span style={{ fontSize: 16 }}>🎯</span>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>
-                    AI Remediation Engine Active
+                  <span style={{ fontWeight: 700, fontSize: 13.5 }}>
+                    Targeted Remediation Recommendation
                   </span>
                   <span
                     style={{
@@ -319,20 +414,20 @@ export default function CourseDiscovery() {
                     Priority #1
                   </span>
                 </div>
-                <div style={{ fontSize: 13, color: "#D4E8D8" }}>
-                  Courses addressing your <strong>{highestGapMetric.gap}% measured gap</strong> in{" "}
-                  <strong>{highestGapMetric.domain}</strong> are highlighted and ranked first in the feed below.
+                <div style={{ fontSize: 12.5, color: "#D4E8D8" }}>
+                  Bridges your <strong>{highestGapMetric.gap}% measured gap</strong> in{" "}
+                  <strong>{highestGapMetric.domain}</strong>. Select aligned courses below to include them in your dynamic roadmap.
                 </div>
               </div>
               <button
                 onClick={() => navigate("/student/gap-analysis")}
                 style={{
-                  padding: "8px 16px",
+                  padding: "6px 14px",
                   background: "rgba(255,255,255,0.15)",
                   color: "#fff",
                   border: "1px solid rgba(255,255,255,0.3)",
                   borderRadius: 8,
-                  fontSize: 12.5,
+                  fontSize: 12,
                   fontWeight: 600,
                   cursor: "pointer",
                   whiteSpace: "nowrap",
@@ -344,37 +439,83 @@ export default function CourseDiscovery() {
           )}
         </div>
 
-        {/* Results Count */}
-        <div style={{ fontSize: 13, color: C.muted }}>
-          Showing <strong>{filteredCourses.length}</strong> available programs
+        {/* Results Bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 13, color: C.muted }}>
+            Showing <strong>{catalogResult.courses.length}</strong> of{" "}
+            <strong>{catalogResult.totalMatches.toLocaleString()}</strong> matching courses
+            {selectedDomain !== "all" && ` in "${selectedDomain}"`}
+          </div>
+
+          {/* Pagination Controls */}
+          {catalogResult.totalPages > 1 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 6,
+                  border: `1px solid ${C.border}`,
+                  background: page <= 1 ? C.bg : C.surface,
+                  cursor: page <= 1 ? "not-allowed" : "pointer",
+                  fontSize: 12,
+                  color: page <= 1 ? C.muted : C.dark,
+                  fontWeight: 600,
+                }}
+              >
+                ← Prev
+              </button>
+              <span style={{ fontSize: 12, color: C.dark, fontWeight: 600 }}>
+                Page {catalogResult.currentPage} of {catalogResult.totalPages}
+              </span>
+              <button
+                disabled={page >= catalogResult.totalPages}
+                onClick={() => setPage((p) => Math.min(catalogResult.totalPages, p + 1))}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 6,
+                  border: `1px solid ${C.border}`,
+                  background: page >= catalogResult.totalPages ? C.bg : C.surface,
+                  cursor: page >= catalogResult.totalPages ? "not-allowed" : "pointer",
+                  fontSize: 12,
+                  color: page >= catalogResult.totalPages ? C.muted : C.dark,
+                  fontWeight: 600,
+                }}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Course Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 18 }}>
-          {filteredCourses.map((course) => {
-            const gapInfo = gapMap[course.domainId];
-            const hasGap = gapInfo && gapInfo.gap > 0;
-            const isCritical = gapInfo?.severity === "Critical";
+          {catalogResult.courses.map((course) => {
+            const isSelected = selectedCourseIds.includes(course.id);
+            const isRec = course.aiRecommended;
 
             return (
               <div
                 key={course.id}
                 style={{
                   background: C.surface,
-                  border: `1.5px solid ${isCritical ? C.s4 + "55" : hasGap ? C.accent + "55" : C.border}`,
+                  border: `1.5px solid ${isSelected ? C.s1 : isRec ? C.accent + "80" : C.border}`,
                   borderRadius: 14,
-                  padding: "20px 22px",
+                  padding: "18px 20px",
                   display: "flex",
                   flexDirection: "column",
                   gap: 12,
                   position: "relative",
-                  boxShadow: isCritical ? "0 2px 10px rgba(186, 26, 26, 0.08)" : "0 1px 3px rgba(0,0,0,0.04)",
-                  transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                  boxShadow: isSelected
+                    ? "0 4px 14px rgba(27, 61, 41, 0.12)"
+                    : "0 1px 3px rgba(0,0,0,0.04)",
+                  transition: "all 0.15s ease",
                 }}
               >
                 {/* Top Badges Row */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <span
                       style={{
                         fontSize: 10.5,
@@ -385,145 +526,157 @@ export default function CourseDiscovery() {
                         borderRadius: 4,
                       }}
                     >
-                      {course.level}
+                      {course.level || "Beginner"}
                     </span>
 
                     {course.tpacEndorsed && (
                       <span
                         style={{
-                          fontSize: 10.5,
+                          fontSize: 10,
                           fontWeight: 700,
                           color: "#1B3D29",
                           background: "#E6F4EC",
                           border: "1px solid #1B3D2944",
-                          padding: "2px 8px",
+                          padding: "2px 7px",
                           borderRadius: 4,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
                         }}
                       >
-                        🎖️ NSSTA TPAC Endorsed
+                        🎖️ TPAC
+                      </span>
+                    )}
+
+                    {isRec && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: C.accent,
+                          background: `${C.accent}15`,
+                          border: `1px solid ${C.accent}40`,
+                          padding: "2px 7px",
+                          borderRadius: 4,
+                        }}
+                      >
+                        ✨ AI Pick
                       </span>
                     )}
                   </div>
 
                   <span style={{ fontSize: 11, color: C.muted, fontFamily: FONT.mono, fontWeight: 600 }}>
-                    {course.courseCode}
+                    {course.code}
                   </span>
                 </div>
 
-                {/* Course Title */}
-                <div>
-                  <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: C.dark, lineHeight: 1.35 }}>
+                {/* Course Title & Organization */}
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: "0 0 5px", fontSize: 15.5, fontWeight: 700, color: C.dark, lineHeight: 1.35 }}>
                     <Link to={`/student/courses/${course.id}`} style={{ color: "inherit", textDecoration: "none" }}>
                       {course.title}
                     </Link>
                   </h3>
-                  <div style={{ fontSize: 12, color: C.muted }}>{course.dept}</div>
+                  <div style={{ fontSize: 12, color: C.muted, display: "flex", gap: 6, alignItems: "center" }}>
+                    <span>{course.org || "iGOT Karmayogi"}</span>
+                    <span>•</span>
+                    <span style={{ color: C.accent, fontWeight: 500 }}>{course.domain}</span>
+                  </div>
                 </div>
 
-                {/* Gap Justification Banner (Feature 8 Specification) */}
-                {hasGap ? (
-                  <div
+                {/* Brief description snippet */}
+                {course.desc && (
+                  <p
                     style={{
-                      padding: "8px 12px",
-                      background: isCritical ? "#FDECEA" : "#FEF3E2",
-                      borderRadius: 8,
-                      borderLeft: `3px solid ${isCritical ? C.s4 : C.accent}`,
-                      fontSize: 12,
-                      color: C.dark,
-                      lineHeight: 1.4,
+                      margin: 0,
+                      fontSize: 12.5,
+                      color: C.muted,
+                      lineHeight: 1.45,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
                     }}
                   >
-                    <span style={{ fontWeight: 700, color: isCritical ? C.s4 : C.accent }}>
-                      {isCritical ? "🔴 Critical Remediation: " : "🟡 Targeted Remediation: "}
-                    </span>
-                    Bridges your <strong>{gapInfo.gap}% competency gap</strong> in {course.domain}.
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      padding: "6px 12px",
-                      background: "#E6F4EC66",
-                      borderRadius: 8,
-                      fontSize: 11.5,
-                      color: C.s1,
-                      fontWeight: 500,
-                    }}
-                  >
-                    ✓ FrAC Benchmark met ({course.domain}) · Recommended for continuous proficiency.
-                  </div>
+                    {course.desc}
+                  </p>
                 )}
 
-                {/* Description */}
-                <p style={{ margin: 0, fontSize: 13, color: C.dark, lineHeight: 1.5, opacity: 0.85 }}>
-                  {course.desc}
-                </p>
+                {/* Meta details (duration, rating) */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: C.muted, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <span>⏱️ {course.duration || 6}h</span>
+                    <span>⭐ {course.rating || 4.8}</span>
+                    {course.subDomain && <span>📁 {course.subDomain}</span>}
+                  </div>
 
-                {/* Meta details: Duration, Enrolled, Rating */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 16,
-                    fontSize: 12,
-                    color: C.muted,
-                    paddingTop: 10,
-                    borderTop: `1px solid ${C.border}`,
-                  }}
-                >
-                  <span>⏱️ <strong>{course.duration}h</strong> total</span>
-                  <span>👥 <strong>{course.enrolled.toLocaleString()}</strong> enrolled students</span>
-                  <span>⭐ <strong>{course.rating}</strong> ({course.reviews})</span>
-                  <span>📚 {course.modulesCount} modules</span>
-                </div>
-
-                {/* Action Buttons */}
-                <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
+                  {/* Toggle Button */}
                   <button
-                    onClick={() => navigate(`/student/courses/${course.id}`)}
+                    onClick={() => handleToggleCourse(course.id)}
                     style={{
-                      flex: 1,
-                      padding: "10px 0",
-                      background: "#1B3D29",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 13,
+                      padding: "6px 12px",
+                      borderRadius: 6,
+                      border: isSelected ? `1px solid ${C.s1}` : `1px solid ${C.border}`,
+                      background: isSelected ? C.s1 : C.surface,
+                      color: isSelected ? "#fff" : C.dark,
+                      fontSize: 12,
                       fontWeight: 700,
                       cursor: "pointer",
-                      fontFamily: FONT.body,
-                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      transition: "all 0.15s ease",
                     }}
                   >
-                    Enroll & Begin Module →
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      alert(`[iGOT Karmayogi Deep Link]\nSimulating direct single-sign-on launch to course ${course.courseCode} on the official iGOT Karmayogi portal.`);
-                    }}
-                    title="Simulate official iGOT Karmayogi portal deep link"
-                    style={{
-                      padding: "10px 14px",
-                      background: "transparent",
-                      border: `1.5px solid ${C.border}`,
-                      borderRadius: 8,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: C.dark,
-                      cursor: "pointer",
-                      fontFamily: FONT.body,
-                    }}
-                  >
-                    iGOT ↗
+                    {isSelected ? "✓ In My Path" : "+ Add to Path"}
                   </button>
                 </div>
               </div>
             );
           })}
         </div>
+
+        {/* Bottom Pagination */}
+        {catalogResult.totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 14 }}>
+            <button
+              disabled={page <= 1}
+              onClick={() => {
+                setPage((p) => Math.max(1, p - 1));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: page <= 1 ? C.bg : C.surface,
+                cursor: page <= 1 ? "not-allowed" : "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              ← Previous Page
+            </button>
+            <span style={{ fontSize: 13, color: C.dark, fontWeight: 600 }}>
+              Page {catalogResult.currentPage} of {catalogResult.totalPages}
+            </span>
+            <button
+              disabled={page >= catalogResult.totalPages}
+              onClick={() => {
+                setPage((p) => Math.min(catalogResult.totalPages, p + 1));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: page >= catalogResult.totalPages ? C.bg : C.surface,
+                cursor: page >= catalogResult.totalPages ? "not-allowed" : "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              Next Page →
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );

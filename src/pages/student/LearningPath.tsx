@@ -1,877 +1,1128 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, Link } from "react-router";
 import { C, FONT } from "@/tokens";
-import { useCompetency } from "@/context/CompetencyContext";
 import { useAuth } from "@/context/AuthContext";
-import { IGOT_COURSES, IGOTCourse } from "@/data/igotCourses";
+import { useCompetency } from "@/context/CompetencyContext";
+import { getCoursesByTitlesOrIds, type IGOTCatalogCourse } from "@/services/karmayogiCoursesService";
+import {
+  generateProceduralRoadmapForCourse,
+  generateAIRoadmapForCourse,
+  askRoadmapAITutor,
+  type RoadmapCourseBlock,
+  type FullCourseRoadmapData,
+} from "@/services/aiRoadmapService";
 
-interface RoadmapNode {
-  id: string;
-  courseId: number;
-  code: string;
-  title: string;
-  domain: string;
-  domainId: string;
-  phaseId: number;
-  phaseName: string;
-  status: "COMPLETED" | "IN_PROGRESS" | "LOCKED";
-  progressPct: number;
-  durationHours: number;
-  level: "Beginner" | "Intermediate" | "Advanced";
-  tpac: boolean;
-  subtopics: string[];
-  citation: string;
-  isGapTarget?: boolean;
-  gapPoints?: number;
-  importance: "Mandatory" | "Recommended" | "Core Remediation";
-}
+const ROADMAP_PROGRESS_KEY = "gyanmarg_roadmap_progress_v2";
 
 export default function LearningPath() {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { getGapMetrics, getSkillHealthScore } = useCompetency();
+  const { getSkillHealthScore } = useCompetency();
 
-  const [viewMode, setViewMode] = useState<"flowchart" | "grid">("flowchart");
-  const [selectedNode, setSelectedNode] = useState<RoadmapNode | null>(null);
-  const [searchFilter, setSearchFilter] = useState("");
-  const [activeDomainFilter, setActiveDomainFilter] = useState("All");
-
-  const gapMetrics = getGapMetrics();
   const skillHealth = getSkillHealthScore();
 
-  // Build the roadmap nodes aligned with user's competency gaps
-  const roadmapNodes: RoadmapNode[] = useMemo(() => {
-    const gapMap = gapMetrics.reduce((acc, curr) => {
-      acc[curr.domainId] = curr;
-      return acc;
-    }, {} as Record<string, typeof gapMetrics[0]>);
+  // Resolve user's selected courses
+  const selectedCourseIds = useMemo(() => {
+    return (profile?.interestedCourses || []).map(String);
+  }, [profile?.interestedCourses]);
 
-    return [
-      // Milestone 1: Foundation (Weeks 1–3)
-      {
-        id: "node-1",
-        courseId: 17,
-        code: "NSSTA-ETH-501",
-        title: "DPDP Act 2023 Statutory Compliance & UN Statistical Ethics",
-        domain: "Public Data Ethics & DPDP Act 2023",
-        domainId: "ethics",
-        phaseId: 1,
-        phaseName: "1.0 Foundation & Statutory Ethics",
-        status: "COMPLETED",
-        progressPct: 100,
-        durationHours: 6,
-        level: "Intermediate",
-        tpac: true,
-        subtopics: ["DPDP Act Section 6 & 9", "Data Fiduciary Mandates", "UN Principle 6 Confidentiality", "k-Anonymity Basics"],
-        citation: "DPDP Act Statutory Guidelines, Chapter 3, p. 8",
-        importance: "Mandatory",
-      },
-      {
-        id: "node-2",
-        courseId: 18,
-        code: "DOPT-GOV-101",
-        title: "Public Service Ethics, Conduct Rules & Integrity in Governance",
-        domain: "Public Data Ethics & DPDP Act 2023",
-        domainId: "ethics",
-        phaseId: 1,
-        phaseName: "1.0 Foundation & Statutory Ethics",
-        status: "COMPLETED",
-        progressPct: 100,
-        durationHours: 4,
-        level: "Beginner",
-        tpac: false,
-        subtopics: ["CCS Conduct Rules 1964", "Preventing Conflict of Interest", "Public Trust in Data", "Vigilance Procedures"],
-        citation: "DoPT Administrative Handbook, Chapter 2",
-        importance: "Mandatory",
-      },
-      {
-        id: "node-3",
-        courseId: 2,
-        code: "NSSTA-SAM-102",
-        title: "Fundamentals of Survey Sampling & NSS Estimation Procedures",
-        domain: "Applied Statistics & Sampling Theory",
-        domainId: "stats",
-        phaseId: 1,
-        phaseName: "1.0 Foundation & Statutory Ethics",
-        status: "COMPLETED",
-        progressPct: 100,
-        durationHours: 6,
-        level: "Beginner",
-        tpac: true,
-        subtopics: ["SRSWOR Principles", "Probability Proportional to Size (PPS)", "First Stage Units (FSUs)", "Listing Schedules"],
-        citation: "MoSPI Sampling Theory Manual, Chapter 1, p. 12",
-        importance: "Mandatory",
-      },
+  const userSelectedCourses: IGOTCatalogCourse[] = useMemo(() => {
+    return getCoursesByTitlesOrIds(selectedCourseIds);
+  }, [selectedCourseIds]);
 
-      // Milestone 2: Critical Remediation (Weeks 4–7) — Dynamically prioritized by gap severity
-      {
-        id: "node-4",
-        courseId: 13,
-        code: "FOD-GIS-102",
-        title: "QGIS Spatial Sampling Frame Construction & Geo-tagging",
-        domain: "GIS & Spatial Analysis",
-        domainId: "gis",
-        phaseId: 2,
-        phaseName: "2.0 Critical Competency Remediation",
-        status: "IN_PROGRESS",
-        progressPct: 55,
-        durationHours: 9,
-        level: "Intermediate",
-        tpac: true,
-        subtopics: ["Primary Sampling Unit Boundary Vectorization", "Sentinel-2 Built-Up Overlays", "HDOP <= 2.0 Tablet Standards", "Geo-fencing Polygons"],
-        citation: "MoSPI GIS Integration Guidelines, Section 4.2, p. 17",
-        isGapTarget: true,
-        gapPoints: gapMap["gis"]?.gap || 45,
-        importance: "Core Remediation",
-      },
-      {
-        id: "node-5",
-        courseId: 5,
-        code: "DIID-DB-203",
-        title: "Enterprise SQL & High-Volume Microdata Aggregations for CPI/IIP",
-        domain: "SQL & Database Operations",
-        domainId: "sql",
-        phaseId: 2,
-        phaseName: "2.0 Critical Competency Remediation",
-        status: "IN_PROGRESS",
-        progressPct: 40,
-        durationHours: 8,
-        level: "Intermediate",
-        tpac: true,
-        subtopics: ["Trailing 12-Month Moving Averages", "PARTITION BY Window Aggregations", "UNION ALL High-Speed Ingestion", "CPI Laspeyres Weighting"],
-        citation: "DIID SQL Protocols for CPI/IIP, Section 3.1, p. 42",
-        isGapTarget: true,
-        gapPoints: gapMap["sql"]?.gap || 30,
-        importance: "Core Remediation",
-      },
-      {
-        id: "node-6",
-        courseId: 9,
-        code: "MOSPI-PY-301",
-        title: "Python Data Science for Official Statistics & PLFS Cleansing",
-        domain: "Python & Data Analytics",
-        domainId: "python",
-        phaseId: 2,
-        phaseName: "2.0 Critical Competency Remediation",
-        status: "IN_PROGRESS",
-        progressPct: 30,
-        durationHours: 10,
-        level: "Intermediate",
-        tpac: true,
-        subtopics: ["Pandas Microdata Ingestion", "Group-wise Median Wage Imputation", "Robust Anomaly Detection (MAD)", "PLFS Validation Pipelines"],
-        citation: "MoSPI Python PLFS Cookbook, Section 5, p. 33",
-        isGapTarget: true,
-        gapPoints: gapMap["python"]?.gap || 35,
-        importance: "Core Remediation",
-      },
+  // Active course filter (or "all")
+  const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-      // Milestone 3: Advanced Applications (Weeks 8–10)
-      {
-        id: "node-7",
-        courseId: 1,
-        code: "NSSTA-ST-401",
-        title: "Advanced Sampling Theory & Multi-Stage Sample Design",
-        domain: "Applied Statistics & Sampling Theory",
-        domainId: "stats",
-        phaseId: 3,
-        phaseName: "3.0 Advanced Spatial Analytics & Big Data",
-        status: "LOCKED",
-        progressPct: 0,
-        durationHours: 12,
-        level: "Advanced",
-        tpac: true,
-        subtopics: ["Finite Population Correction (FPC)", "Jackknife & Bootstrap Variances", "Complex Survey Weights Calibration", "Stratified Standard Errors"],
-        citation: "NSSTA Operational Sampling Manual, Chapter 4, p. 28",
-        importance: "Recommended",
-      },
-      {
-        id: "node-8",
-        courseId: 15,
-        code: "MOSPI-GIS-304",
-        title: "Satellite Imagery Integration & Urban Growth Footprint Analysis",
-        domain: "GIS & Spatial Analysis",
-        domainId: "gis",
-        phaseId: 3,
-        phaseName: "3.0 Advanced Spatial Analytics & Big Data",
-        status: "LOCKED",
-        progressPct: 0,
-        durationHours: 12,
-        level: "Advanced",
-        tpac: true,
-        subtopics: ["Multi-Spectral Sentinel-2 Classification", "Nighttime Lights Proxy Estimation", "Automated Zonal Clipping", "District Spatial Reporting"],
-        citation: "ISRO/MoSPI Geomatics Standard, Chapter 5",
-        importance: "Recommended",
-      },
-      {
-        id: "node-9",
-        courseId: 11,
-        code: "MOSPI-ML-402",
-        title: "Machine Learning & Automated Imputation in National Accounts",
-        domain: "Python & Data Analytics",
-        domainId: "python",
-        phaseId: 3,
-        phaseName: "3.0 Advanced Spatial Analytics & Big Data",
-        status: "LOCKED",
-        progressPct: 0,
-        durationHours: 14,
-        level: "Advanced",
-        tpac: true,
-        subtopics: ["Nowcasting Gross Value Added (GVA)", "Entity Matching in MCA21 Filings", "Isolation Forests for Data Audits", "Model Explainability (SHAP)"],
-        citation: "NAD National Accounts Modernization Guidelines",
-        importance: "Recommended",
-      },
+  // Store roadmap data per course
+  const [roadmapsByCourse, setRoadmapsByCourse] = useState<Record<string, FullCourseRoadmapData>>({});
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiFocusPrompt, setAiFocusPrompt] = useState("");
+  const [showAiModal, setShowAiModal] = useState(false);
 
-      // Milestone 4: Certification & Exit Capstone (Weeks 11–12)
-      {
-        id: "node-10",
-        courseId: 22,
-        code: "MOSPI-CERT-500",
-        title: "Advanced Competency Verification & Capstone Assessment",
-        domain: "Public Data Ethics & DPDP Act 2023",
-        domainId: "ethics",
-        phaseId: 4,
-        phaseName: "4.0 National Certification & Capstone",
-        status: "LOCKED",
-        progressPct: 0,
-        durationHours: 16,
-        level: "Advanced",
-        tpac: true,
-        subtopics: ["End-to-End Project Cycle Simulation", "Multi-Domain Comprehensive Test", "Live Data Pipeline Capstone Defense", "Digital Credential"],
-        citation: "Standard Board of Examiners Protocol",
-        importance: "Mandatory",
-      },
-    ];
-  }, [gapMetrics]);
+  // Selected node for inspector drawer
+  const [inspectedBlock, setInspectedBlock] = useState<RoadmapCourseBlock | null>(null);
 
-  // Filter nodes
-  const filteredNodes = useMemo(() => {
-    return roadmapNodes.filter((n) => {
-      const matchSearch =
-        searchFilter === "" ||
-        n.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
-        n.code.toLowerCase().includes(searchFilter.toLowerCase()) ||
-        n.subtopics.some((s) => s.toLowerCase().includes(searchFilter.toLowerCase()));
-      const matchDomain = activeDomainFilter === "All" || n.domain === activeDomainFilter;
-      return matchSearch && matchDomain;
+  // Node completion status overrides stored in state & localStorage
+  const [blockStatuses, setBlockStatuses] = useState<Record<string, "todo" | "learning" | "done" | "skip">>(() => {
+    try {
+      const saved = localStorage.getItem(ROADMAP_PROGRESS_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // AI Tutor floating bar state
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiTutorAnswer, setAiTutorAnswer] = useState<string | null>(null);
+  const [isAskingTutor, setIsAskingTutor] = useState(false);
+
+  // Initialize roadmaps for selected courses
+  useEffect(() => {
+    if (userSelectedCourses.length === 0) return;
+
+    setRoadmapsByCourse((prev) => {
+      const updated = { ...prev };
+      userSelectedCourses.forEach((c) => {
+        const id = String(c.id);
+        if (!updated[id]) {
+          updated[id] = generateProceduralRoadmapForCourse(c);
+        }
+      });
+      return updated;
     });
-  }, [roadmapNodes, searchFilter, activeDomainFilter]);
+  }, [userSelectedCourses]);
 
-  // Group nodes by phase
-  const groupedMilestones = useMemo(() => {
-    const groups: Record<number, { name: string; weeks: string; status: string; nodes: RoadmapNode[] }> = {
-      1: { name: "1.0 Foundation & Statutory Ethics", weeks: "Weeks 1–3", status: "COMPLETED", nodes: [] },
-      2: { name: "2.0 Critical Competency Remediation", weeks: "Weeks 4–7", status: "ACTIVE", nodes: [] },
-      3: { name: "3.0 Advanced Spatial Analytics & Official Big Data", weeks: "Weeks 8–10", status: "LOCKED", nodes: [] },
-      4: { name: "4.0 Comprehensive Capstone & Certification", weeks: "Weeks 11–12", status: "LOCKED", nodes: [] },
-    };
-
-    filteredNodes.forEach((node) => {
-      if (groups[node.phaseId]) {
-        groups[node.phaseId].nodes.push(node);
+  // Persist block status overrides
+  const setBlockStatus = (blockId: string, status: "todo" | "learning" | "done" | "skip") => {
+    setBlockStatuses((prev) => {
+      const updated = { ...prev, [blockId]: status };
+      try {
+        localStorage.setItem(ROADMAP_PROGRESS_KEY, JSON.stringify(updated));
+      } catch (err) {
+        console.warn("Failed to persist roadmap status:", err);
       }
+      return updated;
     });
+  };
 
-    return groups;
-  }, [filteredNodes]);
+  // AI Roadmap Regeneration
+  const handleRegenerateWithAI = async () => {
+    if (userSelectedCourses.length === 0) return;
+    setIsGeneratingAI(true);
+    setShowAiModal(false);
+
+    try {
+      const targetCourse =
+        selectedCourseFilter === "all"
+          ? userSelectedCourses[0]
+          : userSelectedCourses.find((c) => String(c.id) === selectedCourseFilter) || userSelectedCourses[0];
+
+      const newRoadmap = await generateAIRoadmapForCourse(targetCourse, aiFocusPrompt);
+
+      setRoadmapsByCourse((prev) => ({
+        ...prev,
+        [String(targetCourse.id)]: newRoadmap,
+      }));
+    } catch (err) {
+      console.warn("Failed AI generation:", err);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  // Ask AI Tutor
+  const handleAskAITutor = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!aiQuestion.trim()) return;
+
+    setIsAskingTutor(true);
+    setAiTutorAnswer(null);
+
+    try {
+      const activeBlock = inspectedBlock || displayedBlocks[0];
+      const ans = await askRoadmapAITutor({
+        question: aiQuestion,
+        blockTitle: activeBlock?.blockTitle,
+        courseTitle: activeBlock?.courseTitle,
+        domain: activeBlock?.domain,
+      });
+      setAiTutorAnswer(ans);
+    } catch {
+      setAiTutorAnswer("Focus on the official guidelines, statutory standards, and complete the lesson quiz.");
+    } finally {
+      setIsAskingTutor(false);
+    }
+  };
+
+  // Filtered displayed blocks
+  const displayedBlocks: RoadmapCourseBlock[] = useMemo(() => {
+    let list: RoadmapCourseBlock[] = [];
+
+    if (selectedCourseFilter === "all") {
+      userSelectedCourses.forEach((c) => {
+        const r = roadmapsByCourse[String(c.id)];
+        if (r && r.blocks) {
+          list.push(...r.blocks);
+        }
+      });
+    } else {
+      const r = roadmapsByCourse[selectedCourseFilter];
+      if (r && r.blocks) {
+        list = [...r.blocks];
+      }
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (b) =>
+          b.blockTitle.toLowerCase().includes(q) ||
+          b.courseTitle.toLowerCase().includes(q) ||
+          b.domain.toLowerCase().includes(q) ||
+          b.leftBranches.some((br) => br.items.some((it) => it.title.toLowerCase().includes(q))) ||
+          b.rightBranches.some((br) => br.items.some((it) => it.title.toLowerCase().includes(q)))
+      );
+    }
+
+    return list;
+  }, [userSelectedCourses, roadmapsByCourse, selectedCourseFilter, searchQuery]);
+
+  // Overall Roadmap stats
+  const totalBlocks = displayedBlocks.length;
+  const doneCount = displayedBlocks.filter((b) => (blockStatuses[b.id] || b.status) === "done").length;
+  const learningCount = displayedBlocks.filter((b) => (blockStatuses[b.id] || b.status) === "learning").length;
+  const progressPct = totalBlocks > 0 ? Math.round((doneCount / totalBlocks) * 100) : 0;
 
   return (
-    <div style={{ fontFamily: FONT.body, color: C.dark, padding: "28px 32px", minHeight: "100vh", background: C.bg }}>
-      {/* Roadmap Header (roadmap.sh style) */}
-      <div style={{ marginBottom: 24 }}>
+    <div
+      style={{
+        background: "#F9F8F5", // Clean warm roadmap.sh canvas
+        minHeight: "100vh",
+        padding: "24px 32px 100px",
+        fontFamily: FONT.body,
+        color: "#111",
+      }}
+    >
+      {/* Header Bar */}
+      <div
+        style={{
+          maxWidth: 1120,
+          margin: "0 auto 28px",
+          background: "#FFFFFF",
+          border: "2px solid #111111",
+          borderRadius: 12,
+          padding: "20px 24px",
+          boxShadow: "0 3px 0 #111111",
+        }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <span
                 style={{
+                  background: "#FFE066",
+                  color: "#111",
+                  border: "1.5px solid #111",
                   fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  background: "#1B3D29",
-                  color: "#fff",
-                  padding: "3px 10px",
+                  fontWeight: 800,
+                  padding: "2px 8px",
                   borderRadius: 4,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
                 }}
               >
-                Interactive Roadmap · Competency Framework
+                iGOT Curriculum Roadmap
               </span>
-              <span style={{ fontSize: 12, color: C.muted }}>Track: {profile?.track || "Higher Education / University Student"}</span>
+              <span style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>
+                {userSelectedCourses.length} Enrolled Courses · {totalBlocks} Topic Blocks
+              </span>
             </div>
-            <h1 style={{ fontFamily: FONT.display, fontSize: 28, fontWeight: 800, margin: "0 0 6px", color: C.dark }}>
-              Personalized Student Competency Roadmap
+            <h1 style={{ margin: "4px 0 6px", fontSize: 24, fontWeight: 800, fontFamily: FONT.display, color: "#111" }}>
+              {selectedCourseFilter === "all"
+                ? "Unified Capacity-Building Learning Path"
+                : userSelectedCourses.find((c) => String(c.id) === selectedCourseFilter)?.title || "Course Roadmap"}
             </h1>
-            <p style={{ margin: 0, fontSize: 14, color: C.muted, maxWidth: 800 }}>
-              Official developmental roadmap bridging measured competency deficits to achieve target proficiency benchmarks across your chosen learning track.
+            <p style={{ margin: 0, fontSize: 13, color: "#555" }}>
+              Structured, step-by-step block hierarchy divided into practical modules, sub-concepts, and statutory milestones.
             </p>
           </div>
 
-          {/* Quick Metrics & View Toggle */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* View Mode Toggle */}
-            <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: 3 }}>
-              <button
-                onClick={() => setViewMode("flowchart")}
-                style={{
-                  padding: "6px 12px",
-                  border: "none",
-                  borderRadius: 6,
-                  background: viewMode === "flowchart" ? "#1B3D29" : "transparent",
-                  color: viewMode === "flowchart" ? "#fff" : C.dark,
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                🗺️ Flowchart View
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                style={{
-                  padding: "6px 12px",
-                  border: "none",
-                  borderRadius: 6,
-                  background: viewMode === "grid" ? "#1B3D29" : "transparent",
-                  color: viewMode === "grid" ? "#fff" : C.dark,
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                📋 Grid View
-              </button>
-            </div>
-
-            {/* Skill Health Index Badge */}
-            <div
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              onClick={() => setShowAiModal(true)}
               style={{
-                background: "#1B3D29",
-                color: "#fff",
-                borderRadius: 10,
+                background: "#FFE066",
+                color: "#111",
+                border: "2px solid #111",
+                borderRadius: 8,
                 padding: "8px 16px",
-                display: "flex",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 2px 0 #111",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: 10,
-                boxShadow: "0 2px 8px rgba(27, 61, 41, 0.2)",
+                gap: 6,
               }}
             >
-              <div>
-                <div style={{ fontSize: 10, color: "#D4E8D8", textTransform: "uppercase", fontWeight: 700 }}>Skill Health</div>
-                <div style={{ fontFamily: FONT.display, fontSize: 20, fontWeight: 800, color: C.accent }}>{skillHealth}%</div>
-              </div>
-              <span style={{ fontSize: 18 }}>📈</span>
-            </div>
+              <span>✨</span>
+              <span>{isGeneratingAI ? "AI Generating..." : "AI Enhance Roadmap"}</span>
+            </button>
+
+            <Link
+              to="/student/interested-courses"
+              style={{
+                background: "#fff",
+                color: "#111",
+                border: "2px solid #111",
+                borderRadius: 8,
+                padding: "8px 16px",
+                fontSize: 13,
+                fontWeight: 700,
+                textDecoration: "none",
+                boxShadow: "0 2px 0 #111",
+              }}
+            >
+              Modify Courses ({userSelectedCourses.length})
+            </Link>
           </div>
         </div>
 
-        {/* Toolbar: Search, Filters & Legend (roadmap.sh style) */}
+        {/* Course Filter Tabs & Search Bar */}
         <div
           style={{
-            marginTop: 20,
-            background: C.surface,
-            border: `1px solid ${C.border}`,
-            borderRadius: 12,
-            padding: "14px 18px",
+            marginTop: 18,
+            paddingTop: 16,
+            borderTop: "1.5px dashed #CCC",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             flexWrap: "wrap",
-            gap: 14,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            gap: 12,
           }}
         >
-          {/* Search */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 260 }}>
-            <span style={{ fontSize: 14, color: C.muted }}>🔍</span>
-            <input
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search topics, skills, codes (e.g. Sentinel-2, FPC, SQL)..."
+          {/* Scrollable course pills */}
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", maxWidth: "70%", paddingBottom: 4 }}>
+            <button
+              onClick={() => setSelectedCourseFilter("all")}
               style={{
-                width: "100%",
-                border: "none",
-                background: "transparent",
-                fontSize: 13,
-                fontFamily: FONT.body,
-                color: C.dark,
-                outline: "none",
-              }}
-            />
-            {searchFilter && (
-              <button
-                onClick={() => setSearchFilter("")}
-                style={{ background: "transparent", border: "none", cursor: "pointer", color: C.muted, fontSize: 13 }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Domain Dropdown */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, color: C.muted }}>Domain:</span>
-            <select
-              value={activeDomainFilter}
-              onChange={(e) => setActiveDomainFilter(e.target.value)}
-              style={{
-                padding: "6px 10px",
-                borderRadius: 6,
-                border: `1px solid ${C.border}`,
-                background: C.bg,
+                padding: "5px 12px",
+                borderRadius: 20,
+                border: "1.5px solid #111",
+                background: selectedCourseFilter === "all" ? "#111" : "#fff",
+                color: selectedCourseFilter === "all" ? "#FFE066" : "#111",
                 fontSize: 12,
-                color: C.dark,
-                outline: "none",
-                fontFamily: FONT.body,
+                fontWeight: 700,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
-              <option value="All">All 5 FrAC Domains</option>
-              <option value="Applied Statistics & Sampling Theory">Applied Statistics</option>
-              <option value="SQL & Database Operations">SQL & Database</option>
-              <option value="Python & Data Analytics">Python Analytics</option>
-              <option value="GIS & Spatial Analysis">GIS & Spatial</option>
-              <option value="Public Data Ethics & DPDP Act 2023">Data Ethics & DPDP</option>
-            </select>
+              All Courses ({userSelectedCourses.length})
+            </button>
+
+            {userSelectedCourses.map((c) => {
+              const active = selectedCourseFilter === String(c.id);
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCourseFilter(String(c.id))}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: 20,
+                    border: "1.5px solid #111",
+                    background: active ? "#FFE066" : "#fff",
+                    color: "#111",
+                    fontSize: 12,
+                    fontWeight: active ? 700 : 600,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {c.title.length > 25 ? c.title.slice(0, 24) + "…" : c.title}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search filter */}
+          <div style={{ position: "relative", minWidth: 200 }}>
+            <input
+              type="text"
+              placeholder="Search blocks or topics..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "6px 12px 6px 28px",
+                borderRadius: 6,
+                border: "1.5px solid #111",
+                fontSize: 12,
+                fontFamily: FONT.body,
+                outline: "none",
+                background: "#FAF9F6",
+              }}
+            />
+            <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>
+              🔍
+            </span>
+          </div>
+        </div>
+
+        {/* Progress Bar & Status Legend */}
+        <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>Roadmap Mastery: {progressPct}%</span>
+            <div style={{ width: 140, height: 8, background: "#E5E5E5", borderRadius: 4, overflow: "hidden", border: "1px solid #111" }}>
+              <div style={{ width: `${progressPct}%`, height: "100%", background: "#40C057", transition: "width 0.3s ease" }} />
+            </div>
           </div>
 
           {/* Legend */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: C.s1 }} />
-              <span style={{ color: C.dark, fontWeight: 500 }}>Completed</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: C.accent }} />
-              <span style={{ color: C.dark, fontWeight: 500 }}>Active Track</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: C.s4 }} />
-              <span style={{ color: C.dark, fontWeight: 700 }}>Critical Gap</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, border: `1px dashed ${C.border}`, background: C.surface }} />
-              <span style={{ color: C.muted }}>Locked Milestone</span>
-            </div>
+          <div style={{ display: "flex", gap: 14, fontSize: 11.5, fontWeight: 600, color: "#444" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: "#FFE066", border: "1.5px solid #111" }} />
+              Current Learning
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: "#D3F9D8", border: "1.5px solid #111" }} />
+              Completed
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 12, height: 12, borderRadius: 3, background: "#FFF9DB", border: "1.5px solid #111" }} />
+              Sub-Topic
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Main Roadmap View */}
-      {viewMode === "flowchart" ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", padding: "20px 0 60px" }}>
-          {/* Vertical Connecting Spine (SVG) */}
+      {/* Main Roadmap Tree Canvas */}
+      {displayedBlocks.length === 0 ? (
+        <div
+          style={{
+            maxWidth: 600,
+            margin: "60px auto",
+            background: "#fff",
+            border: "2px solid #111",
+            borderRadius: 12,
+            padding: "36px",
+            textAlign: "center",
+            boxShadow: "0 3px 0 #111",
+          }}
+        >
+          <div style={{ fontSize: 44, marginBottom: 12 }}>🗺️</div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 800 }}>No Selected Courses Found</h3>
+          <p style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>
+            Select courses from the 5,400+ iGOT Karmayogi catalog or use the AI Recommender to generate your interactive roadmap.
+          </p>
+          <Link
+            to="/student/interested-courses"
+            style={{
+              padding: "10px 22px",
+              background: "#FFE066",
+              color: "#111",
+              border: "2px solid #111",
+              borderRadius: 8,
+              fontWeight: 800,
+              fontSize: 13.5,
+              textDecoration: "none",
+              boxShadow: "0 2px 0 #111",
+            }}
+          >
+            Select Courses & Generate Path →
+          </Link>
+        </div>
+      ) : (
+        <div
+          style={{
+            maxWidth: 1040,
+            margin: "0 auto",
+            position: "relative",
+            padding: "20px 0 60px",
+          }}
+        >
+          {/* Continuous Central Spine Vertical Line */}
           <div
             style={{
               position: "absolute",
-              top: 0,
+              top: 40,
               bottom: 40,
               left: "50%",
-              width: 4,
               transform: "translateX(-50%)",
-              background: `linear-gradient(to bottom, ${C.s1} 0%, ${C.accent} 40%, ${C.border} 80%)`,
-              zIndex: 1,
-              borderRadius: 2,
+              width: 3,
+              background: "#111111",
+              zIndex: 0,
             }}
           />
 
-          {/* Render Milestone Stages */}
-          {Object.entries(groupedMilestones).map(([phaseKey, milestone], pIdx) => {
-            const phaseNum = Number(phaseKey);
-            const isCompleted = milestone.status === "COMPLETED";
-            const isActive = milestone.status === "ACTIVE";
+          {/* Sequential Blocks */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 54, position: "relative", zIndex: 1 }}>
+            {displayedBlocks.map((block, index) => {
+              const currentStatus = blockStatuses[block.id] || block.status;
+              const isLearning = currentStatus === "learning";
+              const isDone = currentStatus === "done";
+              const isSkip = currentStatus === "skip";
 
-            return (
-              <div
-                key={phaseKey}
-                style={{
-                  width: "100%",
-                  maxWidth: 960,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  position: "relative",
-                  zIndex: 2,
-                  marginBottom: 48,
-                }}
-              >
-                {/* Milestone Hub Anchor (roadmap.sh hub box) */}
-                <div
-                  style={{
-                    background: isCompleted ? "#1B3D29" : isActive ? "#C6851B" : C.surface,
-                    color: isCompleted || isActive ? "#fff" : C.dark,
-                    border: `2px solid ${isCompleted ? "#1B3D29" : isActive ? "#C6851B" : C.border}`,
-                    borderRadius: 30,
-                    padding: "10px 24px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    boxShadow: isActive ? "0 4px 16px rgba(198, 133, 27, 0.3)" : "0 2px 8px rgba(0,0,0,0.08)",
-                    marginBottom: 24,
-                    cursor: "default",
-                  }}
-                >
-                  <span
+              // Color tokens matching roadmap.sh
+              let blockBg = "#FFFDF0";
+              if (isLearning) blockBg = "#FFE066"; // Roadmap yellow
+              if (isDone) blockBg = "#D3F9D8"; // Soft green
+              if (isSkip) blockBg = "#F1F3F5";
+
+              return (
+                <div key={block.id} style={{ position: "relative" }}>
+                  {/* Grid row: Left branches | Center Milestone Block | Right branches */}
+                  <div
                     style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: "50%",
-                      background: "rgba(255,255,255,0.25)",
-                      display: "flex",
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto 1fr",
                       alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
-                      fontSize: 13,
+                      gap: 0,
                     }}
                   >
-                    {isCompleted ? "✓" : isActive ? "⚡" : phaseNum}
-                  </span>
-                  <div>
-                    <span style={{ fontFamily: FONT.display, fontWeight: 800, fontSize: 14, letterSpacing: "0.02em" }}>
-                      {milestone.name}
-                    </span>
-                    <span style={{ fontSize: 12, opacity: 0.85, marginLeft: 8 }}>
-                      ({milestone.weeks})
-                    </span>
-                  </div>
-                </div>
-
-                {/* Branch Nodes Container */}
-                <div
-                  style={{
-                    width: "100%",
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: 20,
-                    position: "relative",
-                  }}
-                >
-                  {milestone.nodes.map((node, nIdx) => {
-                    const isNodeCompleted = node.status === "COMPLETED";
-                    const isNodeActive = node.status === "IN_PROGRESS";
-                    const isNodeLocked = node.status === "LOCKED";
-                    const isGapRemediation = node.isGapTarget;
-
-                    return (
-                      <div
-                        key={node.id}
-                        onClick={() => setSelectedNode(node)}
-                        style={{
-                          background: C.surface,
-                          border: `2px solid ${
-                            isGapRemediation ? C.s4 : isNodeActive ? C.accent : isNodeCompleted ? C.s1 : C.border
-                          }`,
-                          borderRadius: 14,
-                          padding: "18px 20px",
-                          cursor: "pointer",
-                          transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                          boxShadow: isGapRemediation
-                            ? "0 4px 14px rgba(201, 78, 26, 0.15)"
-                            : isNodeActive
-                            ? "0 4px 14px rgba(198, 133, 27, 0.15)"
-                            : "0 2px 6px rgba(0,0,0,0.04)",
-                          position: "relative",
-                          opacity: isNodeLocked ? 0.75 : 1,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }}
-                      >
-                        {/* Header Badges */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 800,
-                                color: "#fff",
-                                background: isNodeCompleted ? C.s1 : isNodeActive ? C.accent : "#5A6B5E",
-                                padding: "2px 6px",
-                                borderRadius: 4,
-                                fontFamily: FONT.mono,
-                              }}
-                            >
-                              {node.code}
-                            </span>
-
-                            {node.tpac && (
-                              <span
+                    {/* LEFT BRANCH (Sub-blocks) */}
+                    <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+                      {block.leftBranches.length > 0 && (
+                        <div style={{ display: "flex", alignItems: "center", maxWidth: 330 }}>
+                          {/* Sub-blocks card */}
+                          <div
+                            style={{
+                              background: "#FFF9DB",
+                              border: "2px solid #111",
+                              borderRadius: 8,
+                              padding: "10px 14px",
+                              boxShadow: "0 2px 0 #111",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 6,
+                              textAlign: "right",
+                            }}
+                          >
+                            {block.leftBranches[0].title && (
+                              <div
                                 style={{
-                                  fontSize: 10,
-                                  fontWeight: 700,
-                                  color: "#1B3D29",
-                                  background: "#E6F4EC",
-                                  border: "1px solid #1B3D2933",
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                }}
-                              >
-                                NSSTA TPAC
-                              </span>
-                            )}
-
-                            {isGapRemediation && (
-                              <span
-                                style={{
-                                  fontSize: 10,
+                                  fontSize: 10.5,
                                   fontWeight: 800,
-                                  color: "#fff",
-                                  background: C.s4,
-                                  padding: "2px 8px",
-                                  borderRadius: 4,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 4,
+                                  color: "#777",
+                                  textTransform: "uppercase",
+                                  letterSpacing: 0.5,
                                 }}
                               >
-                                🎯 Bridges {node.gapPoints}% Gap
-                              </span>
+                                {block.leftBranches[0].title}
+                              </div>
                             )}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                              {block.leftBranches[0].items.map((it) => (
+                                <div
+                                  key={it.id}
+                                  onClick={() => setInspectedBlock(block)}
+                                  style={{
+                                    background: "#FFFFFF",
+                                    border: "1.5px solid #111",
+                                    borderRadius: 6,
+                                    padding: "5px 10px",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    color: "#111",
+                                    cursor: "pointer",
+                                    boxShadow: "0 1px 0 #111",
+                                    transition: "transform 0.1s ease",
+                                  }}
+                                >
+                                  {it.title}
+                                </div>
+                              ))}
+                            </div>
                           </div>
 
-                          <span style={{ fontSize: 12, fontWeight: 700, color: C.muted }}>
-                            {node.durationHours}h
-                          </span>
+                          {/* Dotted horizontal connector line from left card to center block */}
+                          <div
+                            style={{
+                              width: 38,
+                              height: 0,
+                              borderTop: "2px dashed #111",
+                              marginRight: -1,
+                            }}
+                          />
                         </div>
+                      )}
+                    </div>
 
-                        {/* Node Title */}
-                        <div style={{ fontWeight: 700, fontSize: 14.5, color: C.dark, lineHeight: 1.35, marginBottom: 8 }}>
-                          {node.title}
-                        </div>
-
-                        {/* Domain Tag */}
-                        <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 12 }}>
-                          Domain: <strong style={{ color: C.dark }}>{node.domain}</strong>
-                        </div>
-
-                        {/* roadmap.sh style Subtopic Chips */}
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-                          {node.subtopics.map((sub, sIdx) => (
-                            <span
-                              key={sIdx}
-                              style={{
-                                fontSize: 11,
-                                background: C.bg,
-                                color: C.dark,
-                                border: `1px solid ${C.border}`,
-                                padding: "2px 7px",
-                                borderRadius: 4,
-                              }}
-                            >
-                              {sub}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Bottom Status Row */}
+                    {/* CENTER MILESTONE BLOCK (Main Spine Box) */}
+                    <div
+                      style={{
+                        width: 290,
+                        margin: "0 14px",
+                        position: "relative",
+                        zIndex: 2,
+                      }}
+                    >
+                      {/* Top connector dot */}
+                      {index > 0 && (
                         <div
                           style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            paddingTop: 10,
-                            borderTop: `1px solid ${C.border}`,
-                            fontSize: 11.5,
+                            position: "absolute",
+                            top: -14,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: "#111",
+                          }}
+                        />
+                      )}
+
+                      {/* The Main Block Card */}
+                      <div
+                        style={{
+                          background: blockBg,
+                          border: "2px solid #111",
+                          borderRadius: 8,
+                          padding: "14px 16px",
+                          boxShadow: isLearning ? "0 4px 0 #111" : "0 3px 0 #111",
+                          textAlign: "center",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                          position: "relative",
+                        }}
+                      >
+                        {/* Course badge if showing all courses */}
+                        {selectedCourseFilter === "all" && (
+                          <div
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: "#666",
+                              marginBottom: 4,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {block.courseTitle}
+                          </div>
+                        )}
+
+                        <div
+                          style={{
+                            fontFamily: FONT.display,
+                            fontSize: 15,
+                            fontWeight: 800,
+                            color: "#111",
+                            lineHeight: 1.3,
                           }}
                         >
-                          <span style={{ color: C.muted }}>
-                            Status:{" "}
-                            <strong style={{ color: isNodeCompleted ? C.s1 : isNodeActive ? C.accent : C.muted }}>
-                              {isNodeCompleted ? "Completed ✓" : isNodeActive ? "In Progress ⚡" : "Locked 🔒"}
-                            </strong>
-                          </span>
+                          {block.blockTitle}
+                        </div>
 
-                          <span style={{ color: C.accent, fontWeight: 700, fontSize: 12 }}>
-                            Inspect Node →
-                          </span>
+                        {/* Interactive Status Pills (Roadmap.sh signature) */}
+                        <div
+                          style={{
+                            marginTop: 10,
+                            paddingTop: 8,
+                            borderTop: "1.5px dashed rgba(0,0,0,0.15)",
+                            display: "flex",
+                            justifyContent: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBlockStatus(block.id, "learning");
+                            }}
+                            title="Mark as In Progress"
+                            style={{
+                              padding: "3px 8px",
+                              borderRadius: 4,
+                              border: "1.5px solid #111",
+                              background: isLearning ? "#111" : "#fff",
+                              color: isLearning ? "#FFE066" : "#111",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            📖 Learning
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBlockStatus(block.id, "done");
+                            }}
+                            title="Mark as Done"
+                            style={{
+                              padding: "3px 8px",
+                              borderRadius: 4,
+                              border: "1.5px solid #111",
+                              background: isDone ? "#2B8A3E" : "#fff",
+                              color: isDone ? "#fff" : "#111",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✓ Done
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBlockStatus(block.id, "skip");
+                            }}
+                            title="Skip this module"
+                            style={{
+                              padding: "3px 8px",
+                              borderRadius: 4,
+                              border: "1.5px solid #111",
+                              background: isSkip ? "#868E96" : "#fff",
+                              color: isSkip ? "#fff" : "#666",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ✕ Skip
+                          </button>
                         </div>
                       </div>
-                    );
-                  })}
+
+                      {/* Bottom connector indicator arrow */}
+                      {index < displayedBlocks.length - 1 && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: -18,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 0,
+                            height: 0,
+                            borderLeft: "5px solid transparent",
+                            borderRight: "5px solid transparent",
+                            borderTop: "7px solid #111",
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    {/* RIGHT BRANCH (Sub-blocks) */}
+                    <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
+                      {block.rightBranches.length > 0 && (
+                        <div style={{ display: "flex", alignItems: "center", maxWidth: 330 }}>
+                          {/* Dotted horizontal connector line from center block to right card */}
+                          <div
+                            style={{
+                              width: 38,
+                              height: 0,
+                              borderTop: "2px dashed #111",
+                              marginLeft: -1,
+                            }}
+                          />
+
+                          {/* Sub-blocks card */}
+                          <div
+                            style={{
+                              background: "#FFF9DB",
+                              border: "2px solid #111",
+                              borderRadius: 8,
+                              padding: "10px 14px",
+                              boxShadow: "0 2px 0 #111",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 6,
+                              textAlign: "left",
+                            }}
+                          >
+                            {block.rightBranches[0].title && (
+                              <div
+                                style={{
+                                  fontSize: 10.5,
+                                  fontWeight: 800,
+                                  color: "#777",
+                                  textTransform: "uppercase",
+                                  letterSpacing: 0.5,
+                                }}
+                              >
+                                {block.rightBranches[0].title}
+                              </div>
+                            )}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                              {block.rightBranches[0].items.map((it) => (
+                                <div
+                                  key={it.id}
+                                  onClick={() => setInspectedBlock(block)}
+                                  style={{
+                                    background: "#FFFFFF",
+                                    border: "1.5px solid #111",
+                                    borderRadius: 6,
+                                    padding: "5px 10px",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    color: "#111",
+                                    cursor: "pointer",
+                                    boxShadow: "0 1px 0 #111",
+                                    transition: "transform 0.1s ease",
+                                  }}
+                                >
+                                  {it.title}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* Grid View Mode */
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, marginTop: 16 }}>
-          {filteredNodes.map((node) => (
-            <div
-              key={node.id}
-              onClick={() => setSelectedNode(node)}
-              style={{
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                borderRadius: 12,
-                padding: "18px 20px",
-                cursor: "pointer",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, fontFamily: FONT.mono }}>{node.code}</span>
-                <span style={{ fontSize: 11, color: C.faint }}>{node.durationHours}h</span>
-              </div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: C.dark, marginBottom: 6 }}>{node.title}</div>
-              <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>{node.domain}</div>
-              <div style={{ fontSize: 12, color: C.accent, fontWeight: 600 }}>Click to inspect topic details →</div>
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Slide-Out Inspector Drawer (roadmap.sh topic details modal) */}
-      {selectedNode && (
+      {/* FLOATING BOTTOM AI TUTOR BAR (Exact style of roadmap.sh reference screenshot) */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 24,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 100,
+          width: "90%",
+          maxWidth: 640,
+        }}
+      >
+        <form
+          onSubmit={handleAskAITutor}
+          style={{
+            background: "#111111",
+            color: "#fff",
+            border: "2px solid #333",
+            borderRadius: 30,
+            padding: "8px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+          }}
+        >
+          <div
+            style={{
+              background: "#FFE066",
+              color: "#111",
+              fontWeight: 800,
+              fontSize: 12,
+              padding: "4px 10px",
+              borderRadius: 20,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              flexShrink: 0,
+            }}
+          >
+            <span>🤖</span>
+            <span>AI Tutor</span>
+          </div>
+
+          <input
+            type="text"
+            placeholder="Have a question about this roadmap? Type here..."
+            value={aiQuestion}
+            onChange={(e) => setAiQuestion(e.target.value)}
+            style={{
+              flex: 1,
+              background: "transparent",
+              border: "none",
+              color: "#fff",
+              fontSize: 13,
+              fontFamily: FONT.body,
+              outline: "none",
+            }}
+          />
+
+          <button
+            type="submit"
+            disabled={isAskingTutor || !aiQuestion.trim()}
+            style={{
+              background: aiQuestion.trim() ? "#FFE066" : "#444",
+              color: "#111",
+              border: "none",
+              borderRadius: 20,
+              padding: "5px 14px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: aiQuestion.trim() ? "pointer" : "default",
+              transition: "all 0.2s ease",
+            }}
+          >
+            {isAskingTutor ? "Thinking..." : "Ask AI →"}
+          </button>
+        </form>
+
+        {/* AI Answer Bubble */}
+        {aiTutorAnswer && (
+          <div
+            style={{
+              marginTop: 10,
+              background: "#FFFFFF",
+              border: "2px solid #111",
+              borderRadius: 12,
+              padding: "14px 18px",
+              boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
+              position: "relative",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#111", display: "flex", alignItems: "center", gap: 6 }}>
+                <span>💡</span>
+                <span>GyanMarg AI Tutor Response</span>
+              </div>
+              <button
+                onClick={() => setAiTutorAnswer(null)}
+                style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "#888" }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ fontSize: 13, color: "#222", lineHeight: 1.55 }}>
+              {aiTutorAnswer}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* NODE INSPECTOR DRAWER / MODAL */}
+      {inspectedBlock && (
         <div
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 1000,
+            background: "rgba(0,0,0,0.4)",
             display: "flex",
             justifyContent: "flex-end",
+            zIndex: 110,
           }}
-          onClick={() => setSelectedNode(null)}
+          onClick={() => setInspectedBlock(null)}
         >
           <div
             style={{
               width: "100%",
-              maxWidth: 480,
-              background: C.surface,
+              maxWidth: 460,
+              background: "#FFFFFF",
               height: "100%",
-              padding: "28px 30px",
-              boxShadow: "-4px 0 24px rgba(0,0,0,0.15)",
-              overflowY: "auto",
+              padding: "28px 28px",
+              boxShadow: "-8px 0 24px rgba(0,0,0,0.15)",
               display: "flex",
               flexDirection: "column",
-              gap: 20,
+              justifyContent: "space-between",
+              overflowY: "auto",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Drawer Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <span
                   style={{
+                    background: "#FFE066",
+                    color: "#111",
+                    border: "1.5px solid #111",
                     fontSize: 11,
                     fontWeight: 800,
-                    color: "#fff",
-                    background: "#1B3D29",
-                    padding: "3px 8px",
+                    padding: "2px 8px",
                     borderRadius: 4,
-                    fontFamily: FONT.mono,
                   }}
                 >
-                  {selectedNode.code}
+                  Block #{inspectedBlock.blockNumber} · {inspectedBlock.importance}
                 </span>
-
-                {selectedNode.tpac && (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#1B3D29", background: "#E6F4EC", padding: "3px 8px", borderRadius: 4 }}>
-                    🎖️ NSSTA TPAC
-                  </span>
-                )}
+                <button
+                  onClick={() => setInspectedBlock(null)}
+                  style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#555" }}
+                >
+                  ✕
+                </button>
               </div>
 
+              <h2 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 800, fontFamily: FONT.display, color: "#111" }}>
+                {inspectedBlock.blockTitle}
+              </h2>
+              <div style={{ fontSize: 12.5, color: "#666", marginBottom: 16 }}>
+                {inspectedBlock.courseTitle} · {inspectedBlock.domain}
+              </div>
+
+              <p style={{ fontSize: 13.5, color: "#333", lineHeight: 1.55, marginBottom: 20 }}>
+                {inspectedBlock.shortDesc}
+              </p>
+
+              {/* Learning Outcomes */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#111", textTransform: "uppercase", marginBottom: 8 }}>
+                  Key Learning Competencies
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {inspectedBlock.learningOutcomes.map((out, i) => (
+                    <div key={i} style={{ display: "flex", gap: 8, fontSize: 13, color: "#444" }}>
+                      <span style={{ color: "#2B8A3E", fontWeight: 700 }}>✓</span>
+                      <span>{out}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-Topics & Concepts Breakdown */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#111", textTransform: "uppercase", marginBottom: 8 }}>
+                  Curriculum Concepts
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {[
+                    ...inspectedBlock.leftBranches.flatMap((b) => b.items),
+                    ...inspectedBlock.rightBranches.flatMap((b) => b.items),
+                  ].map((it) => (
+                    <span
+                      key={it.id}
+                      style={{
+                        padding: "5px 10px",
+                        background: "#FFF9DB",
+                        border: "1.5px solid #111",
+                        borderRadius: 6,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#111",
+                      }}
+                    >
+                      {it.title}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ borderTop: "1.5px solid #EEE", paddingTop: 18, display: "flex", flexDirection: "column", gap: 10 }}>
               <button
-                onClick={() => setSelectedNode(null)}
-                style={{ background: "transparent", border: "none", fontSize: 20, cursor: "pointer", color: C.muted }}
+                onClick={() => navigate(`/student/courses/${inspectedBlock.courseId}/learn`)}
+                style={{
+                  width: "100%",
+                  padding: "11px 0",
+                  background: "#FFE066",
+                  color: "#111",
+                  border: "2px solid #111",
+                  borderRadius: 8,
+                  fontWeight: 800,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 0 #111",
+                }}
+              >
+                Launch Course Module in Player →
+              </button>
+
+              <button
+                onClick={() => {
+                  setAiQuestion(`Explain the key concepts of ${inspectedBlock.blockTitle}`);
+                  setInspectedBlock(null);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "9px 0",
+                  background: "#FFFFFF",
+                  color: "#111",
+                  border: "1.5px solid #111",
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Ask AI Tutor About This Block
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI ROADMAP RE-GENERATION MODAL */}
+      {showAiModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 120,
+            padding: 20,
+          }}
+          onClick={() => setShowAiModal(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 520,
+              background: "#FFFFFF",
+              border: "2.5px solid #111",
+              borderRadius: 14,
+              padding: "26px",
+              boxShadow: "0 8px 0 #111",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 22 }}>✨</span>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, fontFamily: FONT.display, color: "#111" }}>
+                  AI Learning Path Generator
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAiModal(false)}
+                style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer" }}
               >
                 ✕
               </button>
             </div>
 
-            {/* Title & Domain */}
-            <div>
-              <h2 style={{ fontFamily: FONT.display, fontSize: 20, fontWeight: 800, color: C.dark, margin: "0 0 6px" }}>
-                {selectedNode.title}
-              </h2>
-              <div style={{ fontSize: 13, color: C.muted }}>
-                Domain: <strong>{selectedNode.domain}</strong> · {selectedNode.level} Level · {selectedNode.durationHours} Hours
-              </div>
-            </div>
+            <p style={{ fontSize: 13, color: "#555", marginBottom: 16 }}>
+              Our Groq AI engine will analyze your selected course and decompose it into a customized, pedagogical block diagram with practical branch topics.
+            </p>
 
-            {/* Remediation Callout if applicable */}
-            {selectedNode.isGapTarget && (
-              <div
-                style={{
-                  background: "#FDECEA",
-                  border: `1.5px solid ${C.s4}`,
-                  borderRadius: 10,
-                  padding: "12px 14px",
-                  fontSize: 12.5,
-                  color: C.dark,
-                  lineHeight: 1.4,
-                }}
-              >
-                <strong style={{ color: C.s4 }}>🔴 Critical Competency Remediation:</strong>
-                <div>
-                  This module directly addresses your <strong>{selectedNode.gapPoints}% measured deficit</strong> on the competency diagnostic test. Completion is essential to satisfy your track proficiency benchmarks.
-                </div>
-              </div>
-            )}
-
-            {/* Subtopics Checklist */}
-            <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "16px 18px" }}>
-              <div style={{ fontFamily: FONT.display, fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 10 }}>
-                Roadmap Sub-topics & Skills:
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {selectedNode.subtopics.map((topic, tIdx) => (
-                  <div key={tIdx} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: C.dark }}>
-                    <span style={{ color: selectedNode.status === "COMPLETED" ? C.s1 : C.accent, fontWeight: 700 }}>
-                      {selectedNode.status === "COMPLETED" ? "✓" : "•"}
-                    </span>
-                    <span>{topic}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Official Verifiable Citation */}
-            <div style={{ padding: "12px 14px", background: "#F5F1E6", borderRadius: 8, border: "1px dashed #C6851B", fontSize: 12 }}>
-              <div style={{ fontWeight: 700, color: "#8C3B17", marginBottom: 3 }}>📖 Curriculum & Standard Reference:</div>
-              <div style={{ color: C.dark }}>{selectedNode.citation}</div>
-            </div>
-
-            {/* Actions */}
-            <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-              <button
-                onClick={() => navigate(`/student/courses/${selectedNode.courseId}`)}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#222", marginBottom: 6 }}>
+                Target Learning Focus or Specialization (Optional):
+              </label>
+              <textarea
+                rows={3}
+                placeholder="e.g. Focus on practical procurement compliance, real-world case studies, and fast-track execution..."
+                value={aiFocusPrompt}
+                onChange={(e) => setAiFocusPrompt(e.target.value)}
                 style={{
                   width: "100%",
-                  padding: "12px 0",
-                  background: "#1B3D29",
-                  color: "#fff",
-                  border: "none",
+                  padding: "10px 12px",
                   borderRadius: 8,
-                  fontFamily: FONT.body,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 2px 8px rgba(27, 61, 41, 0.25)",
-                }}
-              >
-                Open Course Curriculum →
-              </button>
-
-              <button
-                onClick={() => {
-                  alert(`[iGOT Karmayogi Deep Link]\nSimulating direct single-sign-on launch to course ${selectedNode.code} on the official iGOT Karmayogi portal.`);
-                }}
-                style={{
-                  width: "100%",
-                  padding: "10px 0",
-                  background: "transparent",
-                  border: `1.5px solid ${C.border}`,
-                  borderRadius: 8,
-                  fontFamily: FONT.body,
+                  border: "1.5px solid #111",
                   fontSize: 13,
+                  fontFamily: FONT.body,
+                  outline: "none",
+                  resize: "vertical",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowAiModal(false)}
+                style={{
+                  padding: "8px 16px",
+                  background: "#fff",
+                  border: "1.5px solid #111",
+                  borderRadius: 8,
                   fontWeight: 600,
-                  color: C.dark,
+                  fontSize: 13,
                   cursor: "pointer",
                 }}
               >
-                Launch on iGOT Karmayogi ↗
+                Cancel
+              </button>
+              <button
+                onClick={handleRegenerateWithAI}
+                disabled={isGeneratingAI}
+                style={{
+                  padding: "8px 20px",
+                  background: "#FFE066",
+                  color: "#111",
+                  border: "2px solid #111",
+                  borderRadius: 8,
+                  fontWeight: 800,
+                  fontSize: 13.5,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 0 #111",
+                }}
+              >
+                {isGeneratingAI ? "Generating Roadmap..." : "Generate Custom Roadmap →"}
               </button>
             </div>
           </div>

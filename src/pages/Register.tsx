@@ -84,7 +84,7 @@ export default function Register() {
       } else if (needsEmailConfirmation) {
         setInfoMsg("Account registered successfully! A confirmation link has been sent to your email. Please check your inbox and verify to sign in.");
       } else {
-        navigate("/onboarding");
+        navigate("/student/interested-courses");
       }
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to create account. Please try again.");
@@ -299,7 +299,7 @@ export default function Register() {
                 }}
                 onClick={() => {
                   loginAsDemo("student");
-                  navigate("/onboarding");
+                  navigate("/student/interested-courses");
                 }}
               >
                 <div style={{ width: 22, height: 22, borderRadius: "50%", background: C.dark, display: "flex", alignItems: "center", justifyContent: "center" }}>

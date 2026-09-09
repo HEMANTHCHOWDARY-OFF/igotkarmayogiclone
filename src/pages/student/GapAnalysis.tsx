@@ -64,6 +64,10 @@ const DOMAIN_COURSE_MAP: Record<string, { title: string; courseCode: string; dur
   },
 };
 
+import { useMemo } from "react";
+import { getCoursesByTitlesOrIds, type IGOTCatalogCourse } from "@/services/karmayogiCoursesService";
+import { getCourseProgress } from "@/services/courseProgressService";
+
 export default function GapAnalysis() {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -72,13 +76,65 @@ export default function GapAnalysis() {
   const studentTrack = profile?.track || "Higher Education / University Student";
   const gapMetrics = getGapMetrics();
 
+  // Selected courses resolved from profile
+  const selectedCourseIds = useMemo(() => {
+    return (profile?.interestedCourses || []).map(String);
+  }, [profile?.interestedCourses]);
+
+  const userSelectedCourses: IGOTCatalogCourse[] = useMemo(() => {
+    return getCoursesByTitlesOrIds(selectedCourseIds);
+  }, [selectedCourseIds]);
+
   // Radar chart data comparing User Current vs Target Benchmark
-  const radarData = domains.map((d) => ({
-    domain: d.short,
-    current: d.currentScore,
-    target: d.targetBenchmark,
-    fullName: d.name,
-  }));
+  // Multi-axis polar geometry in Recharts requires >= 3 points to render a closed 2D polygon.
+  // When the student selects 1 or 2 domains, we synthesize standard civil service reference pillars
+  // and clearly flag the student's enrolled domain with "★" so the radar web never collapses into a single line.
+  const radarData = useMemo(() => {
+    const rawList = (profile?.interestedDomains && profile.interestedDomains.length > 0)
+      ? profile.interestedDomains
+      : domains.map((d) => d.name);
+
+    if (rawList.length >= 3) {
+      return rawList.slice(0, 6).map((dom) => {
+        const match = domains.find((d) => d.name.toLowerCase() === dom.toLowerCase());
+        return {
+          domain: dom.length > 14 ? dom.slice(0, 13) + "…" : dom,
+          current: match ? match.currentScore : 45,
+          target: match ? match.targetBenchmark : 85,
+          fullName: dom,
+          isUserFocus: true,
+        };
+      });
+    }
+
+    // 1 or 2 domains selected: build a complete 5-pillar civil service competency polygon
+    const userItems = rawList.map((dom) => {
+      const match = domains.find((d) => d.name.toLowerCase() === dom.toLowerCase());
+      return {
+        domain: `★ ${dom.length > 12 ? dom.slice(0, 11) + "…" : dom}`,
+        current: match ? match.currentScore : 45,
+        target: match ? match.targetBenchmark : 85,
+        fullName: `${dom} (Enrolled Focus)`,
+        isUserFocus: true,
+      };
+    });
+
+    const foundationalCadrePillars = [
+      { domain: "Policy & GFR", current: 55, target: 80, fullName: "Public Administration & GFR", isUserFocus: false },
+      { domain: "Digital E-Gov", current: 50, target: 80, fullName: "Digital India & Public Systems", isUserFocus: false },
+      { domain: "Statutory Ethics", current: 60, target: 85, fullName: "Civil Service Ethics & DPDP", isUserFocus: false },
+      { domain: "Research Ops", current: 52, target: 80, fullName: "Applied Statistical Research", isUserFocus: false },
+    ];
+
+    const combined = [...userItems];
+    for (const pillar of foundationalCadrePillars) {
+      if (combined.length >= 5) break;
+      if (!combined.some((c) => c.fullName.toLowerCase().includes(pillar.domain.toLowerCase()))) {
+        combined.push(pillar);
+      }
+    }
+    return combined;
+  }, [profile?.interestedDomains, domains]);
 
   // Bar chart data for gap size
   const gapBarData = gapMetrics.map((m) => ({
@@ -108,16 +164,39 @@ export default function GapAnalysis() {
       })
     : "Initial Baseline Setup";
 
-  // Priority course recommendations based on highest gap
+  // Priority course recommendations based on student's selected courses and highest gap
   const prioritizedCourses = gapMetrics.map((m) => {
+    // Check if user has an enrolled course in this domain
+    const matchedUserCourse = userSelectedCourses.find(
+      (uc) =>
+        uc.domain.toLowerCase().includes(m.domain.toLowerCase()) ||
+        m.domain.toLowerCase().includes(uc.domain.toLowerCase())
+    );
+
+    if (matchedUserCourse) {
+      return {
+        title: matchedUserCourse.title,
+        courseCode: matchedUserCourse.code,
+        duration: `${matchedUserCourse.duration || 8}h`,
+        provider: matchedUserCourse.org || "Enrolled Curriculum",
+        courseId: matchedUserCourse.id,
+        gap: m.domain,
+        domainId: m.domainId,
+        gapPoints: m.gap,
+        severity: m.severity,
+      };
+    }
+
     const courseMeta = DOMAIN_COURSE_MAP[m.domainId] || {
-      title: `${m.domain} Remediation Module`,
+      title: `${m.domain} Capacity Building Module`,
       courseCode: "IGOT-MOD-101",
       duration: "6h",
       provider: "iGOT Karmayogi",
     };
+
     return {
       ...courseMeta,
+      courseId: m.domainId,
       gap: m.domain,
       domainId: m.domainId,
       gapPoints: m.gap,
@@ -159,17 +238,37 @@ export default function GapAnalysis() {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={() => navigate("/student/interested-courses")}
+            style={{
+              padding: "9px 16px",
+              borderRadius: 8,
+              border: `1.5px solid ${C.accent}`,
+              background: `${C.accent}15`,
+              color: C.accent,
+              fontFamily: FONT.body,
+              fontSize: 13.5,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            ⚙️ Modify Course Selection ({userSelectedCourses.length})
+          </button>
+
           <button
             onClick={() => navigate("/student/assessment")}
             style={{
               padding: "9px 18px",
               borderRadius: 8,
-              border: `1.5px solid ${C.accent}`,
-              background: "transparent",
-              color: C.accent,
+              border: `1.5px solid ${C.border}`,
+              background: C.surface,
+              color: C.dark,
               fontFamily: FONT.body,
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: 600,
               cursor: "pointer",
               display: "flex",
@@ -183,11 +282,11 @@ export default function GapAnalysis() {
       </div>
 
       {/* Overview stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16, marginBottom: 28 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
         {[
-          { label: "Net Average Gap", value: `${avgGap} pts`, note: "Average variance from role benchmark", color: avgGap > 20 ? C.s4 : C.accent },
-          { label: "Critical Gaps (>25%)", value: `${criticalCount}`, note: `${criticalCount} domain(s) require immediate remediation`, color: criticalCount > 0 ? C.s4 : C.s1 },
-          { label: "Minor Gaps (10–25%)", value: `${minorCount}`, note: "Suitable for focused micro-learning", color: C.accent },
+          { label: "Net Average Deficit", value: `${avgGap} pts`, note: "Average variance from role benchmark", color: avgGap > 20 ? C.s4 : C.accent },
+          { label: "Critical Deficits (>25%)", value: `${criticalCount}`, note: `${criticalCount} domain(s) require immediate remediation`, color: criticalCount > 0 ? C.s4 : C.s1 },
+          { label: "Minor Deficits (10–25%)", value: `${minorCount}`, note: "Suitable for focused micro-learning", color: C.accent },
           { label: "Priority Focus Areas", value: topPriorityAreas || "None (All Met)", note: "Prioritized in remedial learning roadmap", color: "#1B3D29" },
         ].map((card) => (
           <div
@@ -208,6 +307,73 @@ export default function GapAnalysis() {
         ))}
       </div>
 
+      {/* Precision Mathematical Analysis Callout: Clarifies Deficit vs Completion */}
+      <div
+        style={{
+          background: "#FAF7EE",
+          border: `1.5px solid ${C.accent}40`,
+          borderRadius: 12,
+          padding: "18px 22px",
+          marginBottom: 24,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 16,
+        }}
+      >
+        <div style={{ flex: "1 1 500px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                background: `${C.accent}25`,
+                color: C.accent,
+                padding: "2px 8px",
+                borderRadius: 4,
+                letterSpacing: "0.05em",
+              }}
+            >
+              Calculation Clarity Engine
+            </span>
+            <span style={{ fontSize: 12, color: C.muted }}>
+              Distinguishing Competency Deficit vs. Course Learning Completion
+            </span>
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>
+            Competency Deficit = Benchmark ({gapMetrics[0]?.target || 85}%) − Demonstrated Baseline ({gapMetrics[0]?.current || 45}%) = {gapMetrics[0]?.gap || 40}% Deficit
+          </div>
+          <p style={{ margin: "4px 0 0", fontSize: 12.5, color: C.muted, lineHeight: 1.5 }}>
+            A <strong>{gapMetrics[0]?.gap || 40}% deficit</strong> reflects the skill gap identified in your baseline diagnostic against the civil service cadre requirement. Because you have just enrolled in your selected courses and haven't started modules yet, your <strong>Course Learning Progress is strictly 0%</strong>. Enrolled courses bridge this gap as you complete lessons and quizzes.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          <div style={{ textAlign: "center", background: "#fff", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 16px" }}>
+            <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>Identified Deficit</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: C.s4 }}>-{gapMetrics[0]?.gap || 40}%</div>
+            <div style={{ fontSize: 10, color: C.faint }}>Target: {gapMetrics[0]?.target || 85}%</div>
+          </div>
+          <div style={{ textAlign: "center", background: "#fff", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 16px" }}>
+            <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>Course Progress</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: C.s1 }}>
+              {userSelectedCourses.length > 0
+                ? Math.round(
+                    userSelectedCourses.reduce((acc, c) => acc + getCourseProgress(c.id).percent, 0) /
+                      userSelectedCourses.length
+                  )
+                : 0}
+              %
+            </div>
+            <div style={{ fontSize: 10, color: C.faint }}>
+              {userSelectedCourses.some((c) => getCourseProgress(c.id).percent > 0) ? "In Progress" : "Not Started (0%)"}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Two-column main */}
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.1fr", gap: 20, marginBottom: 28 }}>
         {/* Left column: Radar & Gap charts */}
@@ -225,16 +391,19 @@ export default function GapAnalysis() {
               </div>
             </div>
 
-            {/* Legend */}
-            <div style={{ display: "flex", gap: 20, margin: "16px 0 8px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                <div style={{ width: 12, height: 12, borderRadius: 2, background: C.accent, opacity: 0.9 }} />
-                <span style={{ color: C.dark, fontWeight: 600 }}>Demonstrated Score (%)</span>
+            {/* Legend & Aux Notice */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "14px 0 8px", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ display: "flex", gap: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: 2, background: C.accent, opacity: 0.9 }} />
+                  <span style={{ color: C.dark, fontWeight: 600 }}>Demonstrated Score (%)</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: 2, background: "#1B3D29", opacity: 0.4 }} />
+                  <span style={{ color: C.dark, fontWeight: 600 }}>Target Role Benchmark (%)</span>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-                <div style={{ width: 12, height: 12, borderRadius: 2, background: "#1B3D29", opacity: 0.4 }} />
-                <span style={{ color: C.dark, fontWeight: 600 }}>Target Role Benchmark (%)</span>
-              </div>
+              <span style={{ fontSize: 11, color: C.muted }}>★ Enrolled Focus Domain</span>
             </div>
 
             <ResponsiveContainer width="100%" height={320}>
@@ -282,7 +451,7 @@ export default function GapAnalysis() {
             <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>
               Deficit percentage required to satisfy target benchmark requirements
             </div>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={Math.max(160, gapBarData.length * 55)}>
               <BarChart data={gapBarData} layout="vertical" margin={{ top: 0, right: 24, bottom: 0, left: 100 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
                 <XAxis type="number" domain={[0, 60]} tick={{ fontSize: 11, fill: C.muted, fontFamily: FONT.body }} />
@@ -293,10 +462,10 @@ export default function GapAnalysis() {
                   width={100}
                 />
                 <Tooltip
-                  formatter={(val: any) => [`${val}% Gap Deficit`, "Variance"]}
+                  formatter={(val: any) => [`${val}% Deficit to Bridge`, "Variance"]}
                   contentStyle={{ fontFamily: FONT.body, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12 }}
                 />
-                <Bar dataKey="gap" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="gap" radius={[0, 4, 4, 0]} barSize={28} maxBarSize={36}>
                   {gapBarData.map((entry) => (
                     <Cell key={entry.domain} fill={gapColor(entry.gap)} />
                   ))}
@@ -424,7 +593,7 @@ export default function GapAnalysis() {
                           color: item.severity === "Critical" ? C.s4 : C.accent,
                         }}
                       >
-                        {item.gap > 0 ? `${item.gap}% Gap` : "Satisfied"}
+                        {item.gap > 0 ? `${item.gap}% Deficit (Needs Study)` : "Satisfied"}
                       </span>
                     </div>
                     <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.4 }}>
@@ -470,85 +639,101 @@ export default function GapAnalysis() {
               cursor: "pointer",
             }}
           >
-            Explore Full Catalog (20+ Courses) →
+            Explore Full Catalog (5,400+ Courses) →
           </button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-          {prioritizedCourses.slice(0, 3).map((c) => (
-            <div
-              key={c.courseCode}
-              style={{
-                background: C.bg,
-                border: `1px solid ${c.severity === "Critical" ? C.s4 + "55" : C.border}`,
-                borderRadius: 10,
-                padding: "18px 20px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-                position: "relative",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span
+          {prioritizedCourses.slice(0, 3).map((c) => {
+            const courseProg = getCourseProgress(c.courseId);
+            return (
+              <div
+                key={c.courseCode}
+                style={{
+                  background: C.bg,
+                  border: `1px solid ${c.severity === "Critical" ? C.s4 + "55" : C.border}`,
+                  borderRadius: 10,
+                  padding: "18px 20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  position: "relative",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      color: "#fff",
+                      background: "#1B3D29",
+                      padding: "2px 8px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    {c.provider}
+                  </span>
+                  <span style={{ fontSize: 11, color: C.muted, fontFamily: FONT.mono }}>
+                    {c.courseCode}
+                  </span>
+                </div>
+
+                <div style={{ fontWeight: 700, fontSize: 14, color: C.dark, lineHeight: 1.4 }}>
+                  {c.title}
+                </div>
+
+                <div style={{ fontSize: 12, color: C.muted }}>
+                  Duration: <strong>{c.duration}</strong> · Addresses: <strong>{c.gap}</strong>
+                </div>
+
+                {/* Real Course Learning Progress */}
+                <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 6, padding: "8px 10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted, marginBottom: 4 }}>
+                    <span>Course Progress:</span>
+                    <strong style={{ color: courseProg.percent > 0 ? C.s1 : C.muted }}>
+                      {courseProg.percent}% ({courseProg.percent === 0 ? "Not Started" : courseProg.percent === 100 ? "Completed" : "In Progress"})
+                    </strong>
+                  </div>
+                  <div style={{ height: 5, background: C.border, borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${courseProg.percent}%`, background: C.s1 }} />
+                  </div>
+                </div>
+
+                <div
                   style={{
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    color: "#fff",
-                    background: "#1B3D29",
-                    padding: "2px 8px",
-                    borderRadius: 4,
+                    padding: "6px 10px",
+                    background: c.severity === "Critical" ? "#FDECEA" : "#FEF3E2",
+                    borderRadius: 6,
+                    fontSize: 11.5,
+                    color: c.severity === "Critical" ? C.s4 : C.accent,
+                    fontWeight: 600,
                   }}
                 >
-                  {c.provider}
-                </span>
-                <span style={{ fontSize: 11, color: C.muted, fontFamily: FONT.mono }}>
-                  {c.courseCode}
-                </span>
-              </div>
+                  🎯 Bridges your {c.gapPoints}% measured competency gap
+                </div>
 
-              <div style={{ fontWeight: 700, fontSize: 14, color: C.dark, lineHeight: 1.4 }}>
-                {c.title}
+                <button
+                  onClick={() => navigate(c.courseId ? `/student/courses/${c.courseId}/learn` : "/student/courses")}
+                  style={{
+                    marginTop: "auto",
+                    padding: "9px 0",
+                    background: C.accent,
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 7,
+                    fontFamily: FONT.body,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    textAlign: "center",
+                    boxShadow: "0 2px 6px rgba(198, 133, 27, 0.2)",
+                  }}
+                >
+                  {courseProg.percent === 0 ? "Start Module & Bridge Gap →" : `Resume Module (${courseProg.percent}%) →`}
+                </button>
               </div>
-
-              <div style={{ fontSize: 12, color: C.muted }}>
-                Duration: <strong>{c.duration}</strong> · Addresses: <strong>{c.gap}</strong>
-              </div>
-
-              <div
-                style={{
-                  padding: "6px 10px",
-                  background: c.severity === "Critical" ? "#FDECEA" : "#FEF3E2",
-                  borderRadius: 6,
-                  fontSize: 11.5,
-                  color: c.severity === "Critical" ? C.s4 : C.accent,
-                  fontWeight: 600,
-                }}
-              >
-                🎯 Bridges your {c.gapPoints}% measured competency gap
-              </div>
-
-              <button
-                onClick={() => navigate("/student/courses")}
-                style={{
-                  marginTop: "auto",
-                  padding: "9px 0",
-                  background: C.accent,
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 7,
-                  fontFamily: FONT.body,
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: "pointer",
-                  textAlign: "center",
-                  boxShadow: "0 2px 6px rgba(198, 133, 27, 0.2)",
-                }}
-              >
-                Enroll & Begin Module →
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

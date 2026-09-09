@@ -115,7 +115,8 @@ experience according to the authenticated user's role.
 
 The Student Module provides:
 
--   Dashboard
+-   **Interested Courses / Course Selection Onboarding** (`/student/interested-courses`)
+-   Dashboard (`/student/dashboard`)
 -   Student profile
 -   Competency assessment
 -   Competency profile
@@ -125,6 +126,44 @@ The Student Module provides:
 -   Learning progress
 -   Certificates and achievements
 -   AI assistant
+
+##### Student Authentication & Onboarding Lifecycle
+
+```text
+                    ┌─────────────────────┐
+                    │   Student Login     │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │ Authentication      │
+                    │ Successful          │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │ Interested Courses  │
+                    │ / Onboarding        │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │ Save Course         │
+                    │ Preferences         │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │ Student Dashboard   │
+                    │ / Student Layout    │
+                    └─────────────────────┘
+```
+
+##### Persistent Student Data vs. Demo Session Onboarding State
+
+The platform strictly decouples persistent learning profile data from demo presentation state:
+- **Persistent Student Data:** Stored in Supabase (`auth.users.raw_user_meta_data.interested_courses` via `supabase.auth.updateUser`) and cached in persistent local storage (`gyanmarg_course_prefs_{userId}`). Stored preferences are never deleted when a session ends and are pre-populated into the selection UI when returning.
+- **Demo Session Onboarding State:** Tracked in `sessionStorage` (`gyanmarg_onboarding_completed_{userId}`). In the SIH demo and testing environment, every new browser session or sign-in resets this session token, guaranteeing that evaluators always experience the course selection onboarding interface before entering the dashboard.
 
 #### Mentor Module
 

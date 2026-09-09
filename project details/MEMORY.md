@@ -73,17 +73,29 @@ Replaced preliminary static timeouts and mock profiles with an end-to-end Supaba
    - Connected **Log Out** button directly to `supabase.auth.signOut()`, destroying active sessions in real time.
    - Synchronized settings profile editor with active auth profile.
 
+### B. Student Course Selection Onboarding System
+Implemented a dedicated, persistent, and demo-session-calibrated **Interested Courses Onboarding Flow** (`/student/interested-courses`):
+1. **Flow Enforcement:**
+   - On student login or registration, students are redirected to `/student/interested-courses` before entering `StudentLayout` or `/student/dashboard`.
+   - Admin/mentor logins remain strictly isolated and proceed to `/admin/dashboard`.
+2. **Persistent Data vs Demo Session State Decoupling:**
+   - **Persistent Preferences:** Saved to Supabase user metadata via `supabase.auth.updateUser` and cached in `localStorage` (`gyanmarg_course_prefs_{userId}`). Existing preferences are pre-populated on load.
+   - **Demo Session State:** Tracked via `sessionStorage` (`gyanmarg_onboarding_completed_{userId}`). In repeated SIH demo sessions, the onboarding screen is reliably presented on each new session without wiping stored database preferences.
+   - **Route Guards:** `ProtectedRoute` intercepts direct visits to `/student/dashboard` (or other student layout routes) if session onboarding is incomplete, redirecting immediately to `/student/interested-courses`.
+
 ---
 
 ## 4. Key File Map
 
 | Path | Purpose |
 | :--- | :--- |
-| `src/context/AuthContext.tsx` | Real-time Supabase Auth state, profile resolution & session actions. |
-| `src/components/ProtectedRoute.tsx` | Role-based route guard and session loader. |
+| `src/context/AuthContext.tsx` | Real-time Supabase Auth state, profile resolution, course preferences sync & session actions. |
+| `src/components/ProtectedRoute.tsx` | Role-based route guard, session loader & student onboarding gatekeeper. |
+| `src/utils/coursePreferences.ts` | Utilities for Supabase/local persistent preferences and demo-session onboarding state. |
+| `src/pages/student/InterestedCourses.tsx` | Dedicated student course selection onboarding screen with domain filters, search & card selection. |
 | `src/app/routes.tsx` | Application route tree with protected student & admin branches. |
-| `src/pages/Login.tsx` | Email/password sign-in, Google OAuth button, error banners, demo login. |
-| `src/pages/Register.tsx` | Multi-step registration submitting user profile metadata to Supabase. |
+| `src/pages/Login.tsx` | Email/password sign-in, Google OAuth button, error banners, demo login & onboarding redirects. |
+| `src/pages/Register.tsx` | Multi-step registration submitting user profile metadata and routing to course onboarding. |
 | `src/layouts/StudentLayout.tsx` | Student portal sidebar & topbar synced to live authenticated user. |
 | `src/layouts/AdminLayout.tsx` | Admin portal sidebar & topbar synced to live authenticated administrator. |
 | `src/lib/supabase.ts` | Supabase browser client initialization. |
@@ -99,6 +111,8 @@ Replaced preliminary static timeouts and mock profiles with an end-to-end Supaba
   3. Session recovery and dynamic profile rendering in sidebar/topbar.
   4. Real-time sign-out destroying session and returning to `/login`.
   5. Direct route tampering blocked by `ProtectedRoute`.
+  6. Student onboarding flow verified: Login → `/student/interested-courses` → `/student/dashboard`.
+  7. Demo session reset verified: every new demo session presents onboarding while keeping persistent preferences intact.
 
 ---
 
@@ -422,5 +436,71 @@ Completed **Phase E: Interactive Learning Interface, Instant Evaluation & Learne
 - `npm run build`: Verified clean production compilation in 593ms across 738 modules.
 - Dev server responsive on `http://localhost:8443`.
 
+---
 
+## 14. 5,400+ iGOT Karmayogi Course Catalog Integration & AI Curriculum Recommendation (2026-09-09)
 
+### Key Achievements
+1. **Full-Scale 5,400+ Real Course Catalog Integration (`src/data/igotAllCourses.json`, `src/services/karmayogiCoursesService.ts`)**:
+   - Expanded the previous limited static catalog into a comprehensive dataset of 5,400+ official iGOT Karmayogi and national academy courses across 14 central ministries and state administrative cadres.
+   - Built a hierarchical domain taxonomy (`src/data/igotTaxonomy.json`) covering:
+     - Public Administration, Policy & Good Governance
+     - Financial Rules, GFR 2017 & GeM Public Procurement
+     - Data Analytics, Applied Statistics & MoSPI Statistical Cadre
+     - Digital India, Cyber Security & Government Tech Stack
+     - Civil Service Ethics, Anti-Corruption & DPDP Act 2023
+     - Disaster Management, Internal Security & Police Cadres
+     - Rural Development, Agriculture, Health & Infrastructure Engineering
+   - Created high-performance search, filtering, and multi-course resolver utilities (`getCoursesByTitlesOrIds`, `getAllUnifiedCourses`).
+
+2. **Two-Section Dual-Mode Course Selection Interface (`src/pages/student/InterestedCourses.tsx`)**:
+   - **Section 1: Self-Guided Hierarchical Catalog Explorer**:
+     - 3-tier drilldown: Domains → Sub-domains → Courses.
+     - Multi-selection checkboxes, keyword search, competency level badges, and course duration chips.
+     - Sticky curriculum tray summarizing selected courses count with instant confirmation.
+   - **Section 2: Interactive AI Curriculum Recommendation Engine**:
+     - Conversational interest discovery powered by Groq LLaMA 3.3 70B (with instant local heuristic fallback).
+     - Student specifies career aspirations, role goals, or skills of interest; AI analyzes the profile and generates customized curriculum recommendations with pedagogical rationale.
+     - 1-click "Adopt AI Recommended Curriculum" to automatically configure enrolled competencies.
+
+3. **End-to-End Curriculum Synchronization**:
+   - Synced selected courses across `AuthContext`, Supabase metadata, `CompetencyContext`, and all student screens.
+   - Dynamically adjusts active competency domains in the learner profile to match selected curriculum domains.
+
+---
+
+## 15. roadmap.sh Interactive Block Hierarchy & Deterministic Gap Analysis Engine (2026-09-09)
+
+### Key Achievements
+1. **Interactive Block-Based Roadmap Canvas (`src/pages/student/LearningPath.tsx`, `src/services/aiRoadmapService.ts`)**:
+   - Transformed basic sequential lists into an engaging **roadmap.sh-style visual hierarchy**:
+     - Topic blocks divided into practical modules, sub-concepts, and statutory milestones.
+     - Left and right branch connectors, interactive status indicators (`todo`, `learning`, `done`), and phase badges.
+   - Real-time Groq LLaMA 3.3 70B roadmap generator creating deep, contextual block structures per enrolled course.
+   - Interactive Slide-Over Drawer with learning outcomes, prerequisites, and integrated 24/7 AI Chat Tutor.
+
+2. **Real Course Progress Tracking Service (`src/services/courseProgressService.ts`)**:
+   - Built a centralized service for authentic course and lesson progress stored persistently in `localStorage` (`gyanmarg_course_real_progress_v1`).
+   - **Eliminated Fake/Mock Progress**: Newly enrolled courses strictly initialize at **0% progress** and `"not_started"` status with **0.0 study hours**.
+   - Connected `markLessonCompleted`, `saveQuizScoreForCourse`, and `getCurriculumStats` across `Dashboard.tsx`, `Progress.tsx`, `SkillProfile.tsx`, and `Certificates.tsx`.
+
+3. **Precision Mathematical Gap Analysis & Multi-Axis Geometry (`src/pages/student/GapAnalysis.tsx`)**:
+   - **Resolved Collapsed Radar Chart**:
+     - Recharts polar coordinates require $\ge 3$ vertices to draw a 2D closed polygon. When a student selects 1 or 2 domains (e.g. *Python & Data Analytics*), the radar chart previously collapsed into a single vertical line.
+     - Implemented dynamic 5-pillar civil service competency polygon augmentation: the enrolled domain is highlighted with `★` and exact baseline vs target scores, framed by standard cadre baseline pillars (Policy & GFR, Digital Systems, Statutory Ethics, Research Ops).
+   - **Precision Calculation Engine & Terminology Clarity**:
+     - Added prominent mathematical breakdown cards and callouts clearly separating:
+       - **Competency Gap Deficit** = Target Benchmark ($85\%$) − Demonstrated Baseline ($45\%$) = $40\%$ Deficit to bridge.
+       - **Course Learning Progress** = Completed Modules / Total Modules = $0\%$ (strictly 0% until student begins coursework).
+     - Replaced ambiguous badges like `"40% Gap"` with `"40% Deficit (Needs Study)"` to eliminate user confusion between gap variance and course completion.
+   - **Curated Remedial Courses**:
+     - Display authentic course progress bars and dynamic action buttons (`Start Module & Bridge Gap →` vs `Resume Module →`).
+
+4. **Updated Dashboard, Progress & Certificates**:
+   - Updated `Dashboard.tsx`: Enrolled course cards show real progress (0% / Not Started), fixed BarChart bar sizing with `barSize={36}` and `maxBarSize={48}`, and updated browse button to `"Explore 5,400+ Catalog Courses"`.
+   - Updated `Progress.tsx`: Connected study hours to real tracked time (0.0h initially), authentic curriculum completion percentage (0%), and live activity feed.
+   - Updated `Certificates.tsx`: Earned certificates require authentic 100% course completion; displays clean "No Completed Certificates Yet" empty state when newly enrolled.
+
+### Verification
+- `npm run build`: Production compilation passed with code 0 across 746 modules in 19.08s.
+- Tested locally on `http://localhost:8443`.

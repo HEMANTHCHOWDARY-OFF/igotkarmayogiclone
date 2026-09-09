@@ -2,13 +2,19 @@ import React from "react";
 import { Navigate, useLocation, Outlet } from "react-router";
 import { useAuth } from "@/context/AuthContext";
 import { C, FONT } from "@/tokens";
+import { isSessionOnboardingCompleted } from "@/utils/coursePreferences";
 
 interface ProtectedRouteProps {
   requiredRole?: "student" | "admin";
+  requireOnboarding?: boolean;
   children?: React.ReactNode;
 }
 
-export default function ProtectedRoute({ requiredRole, children }: ProtectedRouteProps) {
+export default function ProtectedRoute({
+  requiredRole,
+  requireOnboarding = false,
+  children,
+}: ProtectedRouteProps) {
   const { isAuthenticated, profile, loading } = useAuth();
   const location = useLocation();
 
@@ -74,6 +80,14 @@ export default function ProtectedRoute({ requiredRole, children }: ProtectedRout
   if (requiredRole && profile?.role && profile.role !== requiredRole) {
     const target = profile.role === "admin" ? "/admin/dashboard" : "/student/dashboard";
     return <Navigate to={target} replace />;
+  }
+
+  // If this route requires demo session onboarding to be completed first
+  if (requireOnboarding && profile?.role === "student") {
+    const completed = isSessionOnboardingCompleted(profile.id);
+    if (!completed) {
+      return <Navigate to="/student/interested-courses" replace />;
+    }
   }
 
   return children ? <>{children}</> : <Outlet />;

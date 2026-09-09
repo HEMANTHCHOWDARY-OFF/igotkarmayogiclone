@@ -1,32 +1,12 @@
+import { useMemo } from "react";
 import { C, FONT } from "@/tokens";
-
-const earnedBadges = [
-  { id: 1, label: "First Assessment", icon: "🎯", date: "Mar 12, 2026" },
-  { id: 2, label: "7-Day Streak", icon: "🔥", date: "Apr 3, 2026" },
-  { id: 3, label: "Digital Pioneer", icon: "💻", date: "May 20, 2026" },
-];
-
-const lockedBadges = [
-  { id: 4, label: "Course Master", icon: "📚", progress: 60, hint: "Complete 5 courses" },
-  { id: 5, label: "Speed Learner", icon: "⚡", progress: 30, hint: "Finish a course in 1 day" },
-  { id: 6, label: "Perfect Score", icon: "💯", progress: 80, hint: "Score 100 on any assessment" },
-  { id: 7, label: "Night Owl", icon: "🦉", progress: 10, hint: "Study after 9 PM" },
-  { id: 8, label: "Team Player", icon: "🤝", progress: 45, hint: "Join 3 group sessions" },
-  { id: 9, label: "Policy Pro", icon: "📜", progress: 20, hint: "Complete Policy domain" },
-  { id: 10, label: "Data Guru", icon: "📊", progress: 55, hint: "Complete Data Analytics module" },
-  { id: 11, label: "Leader", icon: "🏅", progress: 5, hint: "Top 10% in department" },
-  { id: 12, label: "Marathon", icon: "🏃", progress: 38, hint: "30-day learning streak" },
-];
-
-const milestones = [
-  { label: "Account Created", date: "Mar 1, 2026", done: true },
-  { label: "First Assessment", date: "Mar 12, 2026", done: true },
-  { label: "First Course Complete", date: "Apr 28, 2026", done: true },
-  { label: "First Certificate", date: "Pending", done: false },
-];
+import { useAuth } from "@/context/AuthContext";
+import { useCompetency } from "@/context/CompetencyContext";
+import { getCoursesByTitlesOrIds, type IGOTCatalogCourse } from "@/services/karmayogiCoursesService";
+import { Link } from "react-router";
 
 function generateHeatmap() {
-  return Array.from({ length: 30 }, (_, i) => {
+  return Array.from({ length: 30 }, () => {
     const r = Math.random();
     return r > 0.6 ? 3 : r > 0.35 ? 2 : r > 0.15 ? 1 : 0;
   });
@@ -42,43 +22,171 @@ const heatColor = (level: number) => {
 };
 
 export default function Achievements() {
+  const { profile } = useAuth();
+  const { domains, lastAssessment, getSkillHealthScore } = useCompetency();
+
+  const skillHealth = getSkillHealthScore();
+
+  const selectedCourseIds = useMemo(() => {
+    return (profile?.interestedCourses || []).map(String);
+  }, [profile?.interestedCourses]);
+
+  const userSelectedCourses: IGOTCatalogCourse[] = useMemo(() => {
+    return getCoursesByTitlesOrIds(selectedCourseIds);
+  }, [selectedCourseIds]);
+
+  const primaryDomain = domains[0]?.name || "Core Domain";
+  const secondaryDomain = domains[1]?.name || "Specialized Domain";
+
+  const earnedBadges = useMemo(() => {
+    return [
+      { id: 1, label: "Curriculum Selected", icon: "🎯", date: "Recent", hint: `${userSelectedCourses.length} courses tailored` },
+      { id: 2, label: "Diagnostic Milestone", icon: "📋", date: "Recent", hint: `${domains.length} domains assessed` },
+      { id: 3, label: `${primaryDomain.split(" ")[0]} Explorer`, icon: "🏆", date: "May 2026", hint: `Foundational mastery in ${primaryDomain}` },
+    ];
+  }, [userSelectedCourses, domains, primaryDomain]);
+
+  const lockedBadges = useMemo(() => {
+    return [
+      {
+        id: 4,
+        label: "Curriculum Finisher",
+        icon: "📚",
+        progress: userSelectedCourses.length > 0 ? 35 : 10,
+        hint: `Complete all ${userSelectedCourses.length || 5} selected courses`,
+      },
+      {
+        id: 5,
+        label: `${secondaryDomain.split(" ")[0]} Specialist`,
+        icon: "⚡",
+        progress: 50,
+        hint: `Achieve 80+ benchmark in ${secondaryDomain}`,
+      },
+      {
+        id: 6,
+        label: "Excellence in Assessment",
+        icon: "💯",
+        progress: lastAssessment ? lastAssessment.score : 70,
+        hint: "Score 90% or above on domain diagnostic",
+      },
+      {
+        id: 7,
+        label: "Capacity Building Streak",
+        icon: "🔥",
+        progress: 60,
+        hint: "Study 7 consecutive days",
+      },
+      {
+        id: 8,
+        label: "Public Service Leader",
+        icon: "🏛️",
+        progress: 40,
+        hint: "Complete governance & leadership modules",
+      },
+      {
+        id: 9,
+        label: "iGOT Certified Scholar",
+        icon: "🏅",
+        progress: 25,
+        hint: "Earn certificates across your selected curriculum",
+      },
+    ];
+  }, [userSelectedCourses, secondaryDomain, lastAssessment]);
+
+  const milestones = useMemo(() => {
+    return [
+      { label: "Account Created & Profile Setup", date: "Jun 1, 2026", done: true },
+      { label: `Curriculum Selected (${userSelectedCourses.length} Courses)`, date: "Active", done: true },
+      { label: `Domain Baseline Assessed (${domains.length} Domains)`, date: lastAssessment ? "Completed" : "In Progress", done: !!lastAssessment },
+      { label: "First Course Certificate", date: "Pending Completion", done: false },
+    ];
+  }, [userSelectedCourses, domains, lastAssessment]);
+
   return (
     <div style={{ padding: "28px 32px", background: C.bg, minHeight: "100vh", fontFamily: FONT.body }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
         <div>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: C.dark, fontFamily: FONT.display, margin: 0 }}>
-            Achievements
+            Achievements & Milestones
           </h1>
-          <p style={{ color: C.muted, marginTop: 4, fontSize: 14 }}>3 of 12 badges earned</p>
+          <p style={{ color: C.muted, marginTop: 4, fontSize: 13.5 }}>
+            {earnedBadges.length} of {earnedBadges.length + lockedBadges.length} badges earned · Based on your {userSelectedCourses.length} selected courses
+          </p>
         </div>
-        <div style={{
-          background: C.dark, color: "#fff", borderRadius: 20, padding: "8px 20px",
-          fontSize: 14, fontWeight: 600
-        }}>
-          🏆 Level 2 — Developing
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div
+            style={{
+              background: C.dark,
+              color: "#fff",
+              borderRadius: 20,
+              padding: "8px 20px",
+              fontSize: 13.5,
+              fontWeight: 600,
+            }}
+          >
+            🏆 Level 2 — {skillHealth >= 75 ? "Proficient" : "Developing"} ({skillHealth}%)
+          </div>
+          <Link
+            to="/student/interested-courses"
+            style={{
+              padding: "8px 16px",
+              borderRadius: 20,
+              border: `1.5px solid ${C.accent}`,
+              color: C.accent,
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: "none",
+            }}
+          >
+            Modify Courses
+          </Link>
         </div>
       </div>
 
       {/* Earned Badges */}
-      <section style={{ marginBottom: 40 }}>
+      <section style={{ marginBottom: 36 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 16, fontFamily: FONT.display }}>
           Earned Badges
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-          {earnedBadges.map(b => (
-            <div key={b.id} style={{
-              background: C.dark, borderRadius: 12, padding: "24px 20px",
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 10
-            }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          {earnedBadges.map((b) => (
+            <div
+              key={b.id}
+              style={{
+                background: C.dark,
+                borderRadius: 12,
+                padding: "24px 20px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
               <div style={{ fontSize: 40 }}>{b.icon}</div>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 15, textAlign: "center", fontFamily: FONT.display }}>
+              <div
+                style={{
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  textAlign: "center",
+                  fontFamily: FONT.display,
+                }}
+              >
                 {b.label}
               </div>
-              <div style={{
-                background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "4px 12px",
-                color: "#D5F0DE", fontSize: 12
-              }}>
+              <div style={{ fontSize: 11.5, color: "#D5F0DE", textAlign: "center" }}>
+                {b.hint}
+              </div>
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.15)",
+                  borderRadius: 20,
+                  padding: "4px 12px",
+                  color: "#D5F0DE",
+                  fontSize: 11.5,
+                }}
+              >
                 Earned {b.date}
               </div>
             </div>
@@ -87,32 +195,45 @@ export default function Achievements() {
       </section>
 
       {/* Locked Badges */}
-      <section style={{ marginBottom: 40 }}>
+      <section style={{ marginBottom: 36 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 16, fontFamily: FONT.display }}>
-          Locked Badges
+          Curriculum Milestone Badges (In Progress)
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-          {lockedBadges.map(b => (
-            <div key={b.id} style={{
-              background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-              padding: "18px 16px", display: "flex", flexDirection: "column", gap: 10
-            }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
+          {lockedBadges.map((b) => (
+            <div
+              key={b.id}
+              style={{
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                padding: "18px 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ fontSize: 28, opacity: 0.35 }}>{b.icon}</div>
+                <div style={{ fontSize: 28, opacity: 0.55 }}>{b.icon}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ color: C.muted, fontWeight: 600, fontSize: 13 }}>{b.label}</div>
-                  <div style={{ color: C.faint, fontSize: 11, marginTop: 2 }}>🔒 {b.hint}</div>
+                  <div style={{ color: C.dark, fontWeight: 700, fontSize: 13.5 }}>{b.label}</div>
+                  <div style={{ color: C.muted, fontSize: 11.5, marginTop: 2 }}>🔒 {b.hint}</div>
                 </div>
               </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                   <span style={{ fontSize: 11, color: C.faint }}>Progress</span>
-                  <span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{b.progress}%</span>
+                  <span style={{ fontSize: 11, color: C.accent, fontWeight: 700 }}>{b.progress}%</span>
                 </div>
-                <div style={{ height: 6, background: C.border, borderRadius: 4 }}>
-                  <div style={{
-                    height: "100%", borderRadius: 4, background: C.faint, width: `${b.progress}%`
-                  }} />
+                <div style={{ height: 6, background: C.border, borderRadius: 4, overflow: "hidden" }}>
+                  <div
+                    style={{
+                      height: "100%",
+                      borderRadius: 4,
+                      background: C.accent,
+                      width: `${b.progress}%`,
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -120,88 +241,96 @@ export default function Achievements() {
         </div>
       </section>
 
-      {/* Learning Streaks */}
-      <section style={{ marginBottom: 40 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 16, fontFamily: FONT.display }}>
-          Learning Streaks
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-          <div style={{
-            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 24px",
-            display: "flex", alignItems: "center", gap: 16
-          }}>
-            <div style={{ fontSize: 36 }}>🔥</div>
-            <div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: C.s1, fontFamily: FONT.display }}>12</div>
-              <div style={{ color: C.muted, fontSize: 13 }}>Current Streak (days)</div>
-            </div>
-          </div>
-          <div style={{
-            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 24px",
-            display: "flex", alignItems: "center", gap: 16
-          }}>
-            <div style={{ fontSize: 36 }}>⭐</div>
-            <div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: C.accent, fontFamily: FONT.display }}>18</div>
-              <div style={{ color: C.muted, fontSize: 13 }}>Best Streak (days)</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Heatmap */}
-        <div style={{
-          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 24px"
-        }}>
-          <div style={{ color: C.muted, fontSize: 13, marginBottom: 12 }}>Last 30 days activity</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-            {heatmapData.map((level, i) => (
-              <div key={i} style={{
-                width: 18, height: 18, borderRadius: 4,
-                background: heatColor(level)
-              }} />
-            ))}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
-            <span style={{ fontSize: 11, color: C.faint }}>Less</span>
-            {[0, 1, 2, 3].map(l => (
-              <div key={l} style={{ width: 14, height: 14, borderRadius: 3, background: heatColor(l) }} />
-            ))}
-            <span style={{ fontSize: 11, color: C.faint }}>More</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Milestones Timeline */}
-      <section>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 20, fontFamily: FONT.display }}>
-          Milestones
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {milestones.map((m, i) => (
-            <div key={i} style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-              {/* Timeline line + dot */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: "50%",
-                  background: m.done ? C.s1 : C.border,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, color: m.done ? "#fff" : C.faint, fontWeight: 700,
-                  flexShrink: 0
-                }}>
-                  {m.done ? "✓" : "○"}
+      {/* Milestones & Activity Heatmap */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        {/* Milestone Tracker */}
+        <div
+          style={{
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 14,
+            padding: "22px 24px",
+          }}
+        >
+          <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 16px", color: C.dark, fontFamily: FONT.display }}>
+            Program Milestones
+          </h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {milestones.map((m, idx) => (
+              <div key={idx} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    background: m.done ? C.s1 : C.border,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {m.done ? "✓" : idx + 1}
                 </div>
-                {i < milestones.length - 1 && (
-                  <div style={{ width: 2, height: 36, background: m.done ? C.s1 : C.border }} />
-                )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: m.done ? C.dark : C.muted }}>
+                    {m.label}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.faint }}>{m.date}</div>
+                </div>
               </div>
-              <div style={{ paddingTop: 6, paddingBottom: 24 }}>
-                <div style={{ fontWeight: 600, color: m.done ? C.dark : C.faint, fontSize: 14 }}>{m.label}</div>
-                <div style={{ color: C.faint, fontSize: 12, marginTop: 2 }}>{m.date}</div>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </section>
+
+        {/* 30-Day Activity Heatmap */}
+        <div
+          style={{
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 14,
+            padding: "22px 24px",
+          }}
+        >
+          <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 4px", color: C.dark, fontFamily: FONT.display }}>
+            30-Day Learning Activity
+          </h3>
+          <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 16px" }}>
+            Consistency on your selected capacity-building track
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 6 }}>
+            {heatmapData.map((val, i) => (
+              <div
+                key={i}
+                title={`Day ${i + 1}: ${val === 3 ? "Extensive" : val === 2 ? "Active" : val === 1 ? "Light" : "No"} activity`}
+                style={{
+                  height: 22,
+                  borderRadius: 4,
+                  background: heatColor(val),
+                  cursor: "pointer",
+                }}
+              />
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 14, fontSize: 11.5, color: C.muted }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: C.border }} /> Less
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: "#A8D5B5" }} />
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: C.s1 }} />
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: C.dark }} /> More
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

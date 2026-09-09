@@ -1,20 +1,23 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
-import { IGOT_COURSES } from "@/data/igotCourses";
+import { getCourseById, getAllUnifiedCourses } from "@/services/karmayogiCoursesService";
 
 export default function CourseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [openModule, setOpenModule] = useState<number | null>(1);
 
-  const course = IGOT_COURSES.find((c) => c.id === Number(id)) || IGOT_COURSES[0];
+  const fallbackCourse = getAllUnifiedCourses()[0];
+  const course = getCourseById(id) || fallbackCourse;
   const enrolled = true;
   const progress = 45;
 
-  const mockModules = Array.from({ length: course.modulesCount }, (_, i) => ({
+  const modulesCount = course.modulesCount || Math.max(3, Math.min(8, Math.round((course.duration || 6) / 2)));
+
+  const mockModules = Array.from({ length: modulesCount }, (_, i) => ({
     id: i + 1,
-    title: `Core Competency Module ${i + 1}: ${course.domain.split(" ")[0]} Fundamentals & Application`,
+    title: `Core Competency Module ${i + 1}: ${course.domain ? course.domain.split(" ")[0] : "Domain"} Fundamentals & Application`,
     lessons: [
       `Lesson ${i + 1}.1: Regulatory Framework & Official Guidelines`,
       `Lesson ${i + 1}.2: Methodological Principles & Standard Operating Procedures`,
@@ -22,6 +25,21 @@ export default function CourseDetails() {
       `Lesson ${i + 1}.4: Practical Implementation Lab & Case Study`,
     ],
   }));
+
+  const outcomes =
+    course.outcomes && course.outcomes.length > 0
+      ? course.outcomes
+      : course.keywords && course.keywords.length > 0
+      ? course.keywords.slice(0, 4).map((k) => `Master core proficiency in ${k}`)
+      : [
+          `Understand foundational principles of ${course.title}`,
+          `Implement best administrative and practical workflows`,
+          `Evaluate real-world governance scenarios and datasets`,
+        ];
+
+  const instructorName = course.instructor?.name || (course.org ? `Faculty Directorate, ${course.org}` : "National iGOT Faculty Lead");
+  const instructorTitle = course.instructor?.title || `Senior Specialist & Curriculum Advisor, ${course.domain || "iGOT Karmayogi"}`;
+  const instructorAvatar = course.instructor?.avatar || (course.org ? course.org.slice(0, 2).toUpperCase() : "IG");
 
   return (
     <div style={{ padding: "28px 32px", background: C.bg, minHeight: "100vh", fontFamily: FONT.body }}>
@@ -43,7 +61,7 @@ export default function CourseDetails() {
           boxShadow: "0 6px 20px rgba(27, 61, 41, 0.2)",
         }}
       >
-        <div style={{ display: "flex", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 12, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
           <span
             style={{
               background: "rgba(255,255,255,0.18)",
@@ -53,7 +71,7 @@ export default function CourseDetails() {
               fontWeight: 600,
             }}
           >
-            {course.level}
+            {course.level || "Beginner"}
           </span>
 
           {course.tpacEndorsed && (
@@ -67,7 +85,7 @@ export default function CourseDetails() {
                 fontWeight: 700,
               }}
             >
-              🎖️ NSSTA TPAC Endorsed Program
+              🎖️ TPAC Endorsed Program
             </span>
           )}
 
@@ -80,23 +98,36 @@ export default function CourseDetails() {
               fontFamily: FONT.mono,
             }}
           >
-            {course.courseCode}
+            {course.code || "IGOT-STD"}
           </span>
+
+          {course.subDomain && (
+            <span
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                borderRadius: 12,
+                padding: "4px 12px",
+                fontSize: 12,
+              }}
+            >
+              {course.subDomain}
+            </span>
+          )}
         </div>
 
-        <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 8px", fontFamily: FONT.display }}>
+        <h1 style={{ fontSize: 26, fontWeight: 800, margin: "0 0 8px", fontFamily: FONT.display }}>
           {course.title}
         </h1>
         <div style={{ color: "#D4E8D8", fontSize: 14, marginBottom: 18 }}>
-          {course.dept} · Provider: <strong>{course.provider}</strong>
+          Domain: <strong>{course.domain}</strong> · Provider: <strong>{course.org || "iGOT Karmayogi"}</strong>
         </div>
 
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           {[
-            `⏱️ ${course.duration} hours total`,
-            `👥 ${course.enrolled.toLocaleString()} enrolled`,
-            `⭐ ${course.rating} / 5.0 (${course.reviews} reviews)`,
+            `⏱️ ${course.duration || 6} hours self-paced`,
+            `⭐ ${course.rating || 4.8} / 5.0 rating`,
             `🎯 Competency: ${course.domain}`,
+            `🏛️ Ministry/Org: ${course.org || "National Civil Service"}`,
           ].map((label) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "#fff" }}>
               <span>{label}</span>
@@ -120,10 +151,10 @@ export default function CourseDetails() {
             }}
           >
             <h2 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 12, fontFamily: FONT.display }}>
-              Course Overview & FrAC Alignment
+              Course Overview & Official Alignment
             </h2>
             <p style={{ color: C.dark, lineHeight: 1.7, fontSize: 14, margin: 0, opacity: 0.9 }}>
-              {course.desc}
+              {course.desc || "Comprehensive capacity building course designed according to official capacity guidelines, providing structured competency growth and practical governance applications."}
             </p>
           </div>
 
@@ -141,7 +172,7 @@ export default function CourseDetails() {
               Target Competencies & Learning Outcomes
             </h2>
             <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
-              {course.outcomes.map((o, i) => (
+              {outcomes.map((o, i) => (
                 <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                   <div
                     style={{
@@ -180,7 +211,7 @@ export default function CourseDetails() {
               <h2 style={{ fontSize: 16, fontWeight: 700, color: C.dark, margin: 0, fontFamily: FONT.display }}>
                 Modular Curriculum
               </h2>
-              <span style={{ fontSize: 12, color: C.muted }}>{course.modulesCount} Modules · {course.modulesCount * 4} Lessons</span>
+              <span style={{ fontSize: 12, color: C.muted }}>{mockModules.length} Modules · {mockModules.length * 4} Lessons</span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -231,7 +262,7 @@ export default function CourseDetails() {
             </div>
           </div>
 
-          {/* Instructor */}
+          {/* Instructor / Authority */}
           <div
             style={{
               background: C.surface,
@@ -241,7 +272,7 @@ export default function CourseDetails() {
             }}
           >
             <h2 style={{ fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 14, fontFamily: FONT.display }}>
-              Course Instructor & Faculty Lead
+              Course Instructor & Content Directorate
             </h2>
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               <div
@@ -259,11 +290,11 @@ export default function CourseDetails() {
                   flexShrink: 0,
                 }}
               >
-                {course.instructor.avatar}
+                {instructorAvatar}
               </div>
               <div>
-                <div style={{ fontWeight: 700, color: C.dark, fontSize: 15 }}>{course.instructor.name}</div>
-                <div style={{ color: C.muted, fontSize: 13, marginTop: 2 }}>{course.instructor.title}</div>
+                <div style={{ fontWeight: 700, color: C.dark, fontSize: 15 }}>{instructorName}</div>
+                <div style={{ color: C.muted, fontSize: 13, marginTop: 2 }}>{instructorTitle}</div>
               </div>
             </div>
           </div>
@@ -290,10 +321,18 @@ export default function CourseDetails() {
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#fff",
+                position: "relative",
               }}
             >
-              <span style={{ fontSize: 32 }}>🎓</span>
-              <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 4, fontWeight: 700 }}>
+              {course.posterImage ? (
+                <img
+                  src={course.posterImage}
+                  alt={course.title}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.35, position: "absolute" }}
+                />
+              ) : null}
+              <span style={{ fontSize: 30, zIndex: 1 }}>🎓</span>
+              <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 4, fontWeight: 700, zIndex: 1 }}>
                 iGOT Karmayogi Program
               </span>
             </div>
@@ -340,7 +379,11 @@ export default function CourseDetails() {
 
               <button
                 onClick={() => {
-                  alert(`[iGOT Deep Link Integration]\nNavigating to https://igotkarmayogi.gov.in/app/toc/${course.courseCode} with Single-Sign-On token.`);
+                  if (course.url) {
+                    window.open(course.url, "_blank", "noopener,noreferrer");
+                  } else {
+                    alert(`Navigating to iGOT Portal for course ${course.code}`);
+                  }
                 }}
                 style={{
                   width: "100%",
@@ -361,10 +404,10 @@ export default function CourseDetails() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
                 {[
-                  ["⏱️", "Duration", `${course.duration} Hours self-paced`],
-                  ["📚", "Curriculum", `${course.modulesCount} Modules across topics`],
-                  ["🏅", "Credential", "NSSTA Verified Digital Badge"],
-                  ["🎯", "FrAC Domain", course.domain],
+                  ["⏱️", "Duration", `${course.duration || 6} Hours self-paced`],
+                  ["📚", "Curriculum", `${mockModules.length} Modules across topics`],
+                  ["🏅", "Credential", "iGOT Verified Digital Badge"],
+                  ["🎯", "FrAC Domain", course.domain || "Governance"],
                 ].map(([icon, label, val]) => (
                   <div key={label} style={{ display: "flex", gap: 10 }}>
                     <span style={{ fontSize: 15, flexShrink: 0 }}>{icon}</span>
