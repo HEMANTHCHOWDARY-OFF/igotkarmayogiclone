@@ -101,44 +101,8 @@ All Core MVP features defined in the engineering specifications are 100% impleme
 
 ---
 
-## 4. Getting Started
 
-### Prerequisites
-- Node.js (v18.0 or higher recommended)
-- npm or yarn
-
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/HEMANTHCHOWDARY-OFF/igotkarmayogiclone.git
-   cd igotkarmayogiclone
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Configure environment variables (create a `.env` file in root):
-   ```env
-   VITE_SUPABASE_URL=https://wztsczaaaiceaoerdbfr.supabase.co
-   VITE_SUPABASE_ANON_KEY=sb_publishable_UnIEEMCkUzUpeaHt7kLpUw_O8CNig68
-   PORT=8443
-   ```
-
-4. Start the local development server:
-   ```bash
-   npm run dev
-   ```
-
-5. Open your browser and navigate to:
-   ```
-   http://localhost:8443
-   ```
-
----
-
-## 5. Production Build & Quality Verification
+## 4. Production Build & Quality Verification
 
 To run a production compilation:
 ```bash
@@ -155,7 +119,7 @@ rendering chunks...
 
 ---
 
-## 6. End-to-End Demonstration Flow (5-Minute Tour)
+## 5. End-to-End Demonstration Flow (5-Minute Tour)
 
 1. **Sign In / Demo Access:**
    - Navigate to `http://localhost:8443/login`.
@@ -183,7 +147,7 @@ rendering chunks...
 
 ---
 
-## 7. Project Documentation
+## 6. Project Documentation
 
 Comprehensive architectural and engineering protocols are maintained in the [`project details/`](./project%20details/) directory:
 
@@ -197,7 +161,7 @@ Comprehensive architectural and engineering protocols are maintained in the [`pr
 
 ---
 
-## 8. License & Notice
+## 7. License & Notice
 
 © 2026 GyanMarg AI. All rights reserved.  
 Built strictly as an independent personal competency intelligence project adhering to established learning science standards.
