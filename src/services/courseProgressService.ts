@@ -87,6 +87,41 @@ export function markLessonCompleted(
   return updated;
 }
 
+export function markCourseCompleted(
+  courseId: string | number,
+  totalLessonsCount: number = 6
+): CourseProgressRecord {
+  const idStr = String(courseId);
+  const all = getAllProgressRecords();
+  const current = all[idStr] || {
+    courseId: idStr,
+    completedLessonIds: [],
+    totalLessons: totalLessonsCount,
+    percent: 0,
+    timeSpentSeconds: 0,
+    status: "not_started" as const,
+  };
+
+  const allLessonIds = Array.from({ length: totalLessonsCount }, (_, i) => i + 1);
+  const updated: CourseProgressRecord = {
+    ...current,
+    completedLessonIds: allLessonIds,
+    totalLessons: totalLessonsCount,
+    percent: 100,
+    status: "completed",
+    lastAccessed: new Date().toISOString(),
+  };
+
+  all[idStr] = updated;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  } catch (err) {
+    console.warn("Failed to save course progress:", err);
+  }
+
+  return updated;
+}
+
 export function saveQuizScoreForCourse(
   courseId: string | number,
   score: number,

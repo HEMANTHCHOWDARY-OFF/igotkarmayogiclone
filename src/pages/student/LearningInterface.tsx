@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router";
 import { C, FONT } from "@/tokens";
 import { useCompetency } from "@/context/CompetencyContext";
 import { getCourseById, getAllUnifiedCourses } from "@/services/karmayogiCoursesService";
+import { markCourseCompleted } from "@/services/courseProgressService";
 
 export default function LearningInterface() {
   const { id } = useParams();
@@ -186,7 +187,7 @@ export default function LearningInterface() {
               fontFamily: FONT.mono,
             }}
           >
-            {course.courseCode}
+            {(course as any).courseCode || course.code || course.id}
           </span>
           <span style={{ fontSize: 13, color: C.dark, fontWeight: 700 }}>
             {course.title}
@@ -538,26 +539,56 @@ export default function LearningInterface() {
                     Ready to bridge your competency gap?
                   </div>
                   <div style={{ fontSize: 12, color: "#78350F", marginTop: 2 }}>
-                    Take the interactive knowledge check to re-evaluate your demonstrated score in {courseDomain.name}.
+                    Finished your modules? Complete this course to directly launch your AI Competency Assessment.
                   </div>
                 </div>
-                <button
-                  onClick={() => setActiveTab("quiz")}
-                  style={{
-                    background: C.accent,
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "9px 20px",
-                    fontFamily: FONT.body,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Take Knowledge Check 🎯
-                </button>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => setActiveTab("quiz")}
+                    style={{
+                      background: "transparent",
+                      color: "#92400E",
+                      border: "1.5px solid #92400E",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      fontFamily: FONT.body,
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Practice Check 🎯
+                  </button>
+                  <button
+                    onClick={() => {
+                      markCourseCompleted(course.id);
+                      navigate("/student/assessment", {
+                        state: {
+                          courseId: course.id,
+                          courseTitle: course.title,
+                          domain: course.domain,
+                          fromCompletion: true,
+                        },
+                      });
+                    }}
+                    style={{
+                      background: C.dark,
+                      color: "#FAF7F0",
+                      border: "none",
+                      borderRadius: 8,
+                      padding: "9px 20px",
+                      fontFamily: FONT.body,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 2px 8px rgba(27, 61, 41, 0.25)",
+                    }}
+                  >
+                    Complete Course & Assess Mastery 🏆
+                  </button>
+                </div>
               </div>
 
               {/* Personal Notes */}
@@ -769,7 +800,36 @@ export default function LearningInterface() {
                   </div>
 
                   {/* CTAs */}
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                    <button
+                      onClick={() => {
+                        markCourseCompleted(course.id);
+                        navigate("/student/assessment", {
+                          state: {
+                            courseId: course.id,
+                            courseTitle: course.title,
+                            domain: course.domain,
+                            fromCompletion: true,
+                          },
+                        });
+                      }}
+                      style={{
+                        background: C.accent,
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "10px 20px",
+                        fontSize: 13.5,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        boxShadow: "0 2px 8px rgba(198, 133, 27, 0.35)",
+                      }}
+                    >
+                      <span>🏆 Validate Mastery via Official AI Assessment →</span>
+                    </button>
                     <button
                       onClick={() => navigate("/student/gap-analysis")}
                       style={{
@@ -783,7 +843,7 @@ export default function LearningInterface() {
                         cursor: "pointer",
                       }}
                     >
-                      View Updated Gap Radar →
+                      View Gap Radar →
                     </button>
                     <button
                       onClick={() => navigate("/student/dashboard")}
@@ -798,22 +858,7 @@ export default function LearningInterface() {
                         cursor: "pointer",
                       }}
                     >
-                      Go to Dashboard 📊
-                    </button>
-                    <button
-                      onClick={() => navigate("/student/learning-path")}
-                      style={{
-                        background: "transparent",
-                        border: `1px solid ${C.s1}`,
-                        color: C.s1,
-                        borderRadius: 8,
-                        padding: "9px 18px",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Return to Learning Path
+                      Dashboard 📊
                     </button>
                   </div>
                 </div>

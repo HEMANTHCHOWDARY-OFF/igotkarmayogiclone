@@ -1,4 +1,5 @@
-import { useNavigate, Link } from "react-router";
+import { useMemo } from "react";
+import { useNavigate, Link, useLocation } from "react-router";
 import {
   BarChart,
   Bar,
@@ -10,7 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { C, FONT } from "@/tokens";
-import { useCompetency } from "@/context/CompetencyContext";
+import { useCompetency, type DiagnosticQuestion } from "@/context/CompetencyContext";
 
 function domainColor(score: number) {
   if (score >= 80) return C.s1; // Green
@@ -27,10 +28,26 @@ const card: React.CSSProperties = {
 
 export default function AssessmentResults() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { domains, lastAssessment, diagnosticQuestions } = useCompetency();
 
-  const date = lastAssessment?.date
-    ? new Date(lastAssessment.date).toLocaleDateString("en-IN", {
+  // Read saved cross-tab submission if location.state is empty
+  const savedResult = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("gyanmarg_latest_assessment_result");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const submissionData = location.state?.submission || savedResult?.submission || lastAssessment;
+  const evaluatedQuestions = (location.state?.questions || savedResult?.questions || diagnosticQuestions) as DiagnosticQuestion[];
+  const userAnswers = location.state?.answers || savedResult?.answers || submissionData?.userAnswers || [];
+  const timeTakenSec = location.state?.timeTaken ?? savedResult?.timeTaken ?? submissionData?.timeTakenSeconds ?? 480;
+
+  const date = submissionData?.date
+    ? new Date(submissionData.date).toLocaleDateString("en-IN", {
         weekday: "long",
         year: "numeric",
         month: "long",
@@ -43,10 +60,9 @@ export default function AssessmentResults() {
         day: "numeric",
       });
 
-  const totalScore = lastAssessment?.score ?? 70;
-  const correctCount = lastAssessment?.correctAnswers ?? 7;
-  const totalCount = lastAssessment?.totalQuestions ?? diagnosticQuestions.length;
-  const timeTakenSec = lastAssessment?.timeTakenSeconds ?? 480;
+  const totalScore = submissionData?.score ?? 70;
+  const correctCount = submissionData?.correctAnswers ?? 7;
+  const totalCount = submissionData?.totalQuestions ?? evaluatedQuestions.length;
 
   const fmtMinSec = (secs: number) => {
     const m = Math.floor(secs / 60)
@@ -75,9 +91,6 @@ export default function AssessmentResults() {
     { label: "Time Taken", value: fmtMinSec(timeTakenSec), color: C.s3 },
     { label: "National Percentile", value: totalScore >= 80 ? "Top 12%" : totalScore >= 65 ? "Top 28%" : "Top 45%", color: C.dark },
   ];
-
-  // User answers map
-  const userAnswers = lastAssessment?.userAnswers || [];
 
   return (
     <div style={{ fontFamily: FONT.body, color: C.dark }}>
@@ -562,7 +575,7 @@ export default function AssessmentResults() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {diagnosticQuestions.map((q, idx) => {
+          {evaluatedQuestions.map((q, idx) => {
             const userAnsIdx = userAnswers[idx];
             const isCorrect = userAnsIdx === q.correct;
             const isAnswered = userAnsIdx !== null && userAnsIdx !== undefined;

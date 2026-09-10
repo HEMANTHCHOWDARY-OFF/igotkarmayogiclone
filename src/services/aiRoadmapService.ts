@@ -318,7 +318,7 @@ Output strictly valid JSON matching this schema:
         side: "left" as const,
         items: (lb.items || []).map((itemText: string, iIdx: number) => ({
           id: `item-${idx + 1}-l-${lIdx}-${iIdx}`,
-          title: typeof itemText === "string" ? itemText : itemText.title || "Concept",
+          title: typeof itemText === "string" ? itemText : (itemText as any)?.title || "Concept",
           status: "todo",
         })),
       }));
@@ -327,9 +327,9 @@ Output strictly valid JSON matching this schema:
         id: `b-${course.id}-${idx + 1}-r-${rIdx}`,
         title: rb.title || "Metrics & Standards",
         side: "right" as const,
-        items: (rb.items || []).map((itemText: string, iIdx: number) => ({
+        items: (rb.items || []).map((itemText: any, iIdx: number) => ({
           id: `item-${idx + 1}-r-${rIdx}-${iIdx}`,
-          title: typeof itemText === "string" ? itemText : itemText.title || "Concept",
+          title: typeof itemText === "string" ? itemText : (itemText as any)?.title || "Concept",
           status: status,
         })),
       }));

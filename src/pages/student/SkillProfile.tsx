@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { C, FONT } from "@/tokens";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 import { Link, useNavigate } from "react-router";
@@ -33,13 +33,41 @@ const levelColor = (level: string) => {
 export default function SkillProfile() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { domains: defaultContextDomains, getSkillHealthScore } = useCompetency();
+  const { domains: defaultContextDomains, getSkillHealthScore, assessmentHistory } = useCompetency();
 
   const displayName = profile?.fullName || user?.user_metadata?.full_name || "Student Learner";
   const initials = profile?.initials || displayName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "SL";
   const studentTrack = profile?.track || "Higher Education / University Student";
   const studentInstitution = profile?.institution || "Academic Learning Track";
   const skillHealth = getSkillHealthScore();
+
+  // Previous 5 assessments from history
+  const previousFiveAssessments = useMemo(() => {
+    return (assessmentHistory || []).slice(0, 5);
+  }, [assessmentHistory]);
+
+  const [selectedAssessmentIndex, setSelectedAssessmentIndex] = useState(0);
+  const activeAssessment = previousFiveAssessments[selectedAssessmentIndex] || previousFiveAssessments[0];
+
+  const formatDate = (dStr: string) => {
+    try {
+      return new Date(dStr).toLocaleDateString("en-IN", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dStr;
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 75) return C.s1;
+    if (score >= 60) return C.accent;
+    return C.s4;
+  };
 
   // Resolve user's actual selected courses
   const selectedCourseIds = useMemo(() => {
@@ -223,6 +251,353 @@ export default function SkillProfile() {
             Retake Diagnostic →
           </Link>
         </div>
+      </div>
+
+      {/* Previous 5 Assessments Card with Dropdown Button */}
+      <div
+        style={{
+          background: C.surface,
+          border: `1px solid ${C.border}`,
+          borderRadius: 14,
+          padding: "22px 28px",
+          marginBottom: 28,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 16,
+            marginBottom: 20,
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  background: "#1B3D2915",
+                  color: "#1B3D29",
+                  padding: "3px 8px",
+                  borderRadius: 4,
+                }}
+              >
+                Assessment Track Record
+              </span>
+              <span style={{ fontSize: 12, color: C.muted }}>Last 5 Evaluation Cycles</span>
+            </div>
+            <h2
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: C.dark,
+                margin: 0,
+                fontFamily: FONT.display,
+              }}
+            >
+              Previous 5 Assessment Scores
+            </h2>
+          </div>
+
+          {/* Dropdown Button & Selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <label
+              htmlFor="assessment-history-dropdown"
+              style={{ fontSize: 12.5, fontWeight: 600, color: C.muted }}
+            >
+              Select Assessment:
+            </label>
+            <div style={{ position: "relative" }}>
+              <select
+                id="assessment-history-dropdown"
+                value={selectedAssessmentIndex}
+                onChange={(e) => setSelectedAssessmentIndex(Number(e.target.value))}
+                style={{
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  MozAppearance: "none",
+                  background: C.bg,
+                  border: `1.5px solid ${C.border}`,
+                  borderRadius: 8,
+                  padding: "9px 36px 9px 14px",
+                  fontFamily: FONT.body,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: C.dark,
+                  cursor: "pointer",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                  outline: "none",
+                }}
+              >
+                {previousFiveAssessments.map((a, idx) => (
+                  <option key={a.id || idx} value={idx}>
+                    {idx === 0 ? "★ Latest · " : `#${previousFiveAssessments.length - idx} · `}
+                    {a.score}% ({new Date(a.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}) - {a.title || `Diagnostic ${idx + 1}`}
+                  </option>
+                ))}
+              </select>
+              <span
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                  fontSize: 11,
+                  color: C.muted,
+                }}
+              >
+                ▼
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Selected Assessment Detail Box (Non-line-by-line interactive showcase) */}
+        {activeAssessment && (
+          <div
+            style={{
+              background: C.bg,
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+              padding: "20px 24px",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "auto 1fr auto",
+                alignItems: "center",
+                gap: 24,
+                flexWrap: "wrap",
+              }}
+            >
+              {/* Score Badge */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: "50%",
+                    background: C.surface,
+                    border: `3px solid ${getScoreColor(activeAssessment.score)}`,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: FONT.display,
+                      fontSize: 24,
+                      fontWeight: 800,
+                      color: getScoreColor(activeAssessment.score),
+                      lineHeight: 1,
+                    }}
+                  >
+                    {activeAssessment.score}%
+                  </span>
+                  <span style={{ fontSize: 9.5, color: C.muted, fontWeight: 700, marginTop: 2 }}>
+                    SCORE
+                  </span>
+                </div>
+
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: getScoreColor(activeAssessment.score),
+                        background: `${getScoreColor(activeAssessment.score)}15`,
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                      }}
+                    >
+                      {activeAssessment.score >= 75
+                        ? "✓ Benchmark Achieved"
+                        : activeAssessment.score >= 60
+                        ? "⚡ Moderate Proficiency"
+                        : "⚠ Remedial Needed"}
+                    </span>
+                    <span style={{ fontSize: 12, color: C.muted }}>
+                      {formatDate(activeAssessment.date)}
+                    </span>
+                  </div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontFamily: FONT.display,
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: C.dark,
+                    }}
+                  >
+                    {activeAssessment.title || `Assessment #${previousFiveAssessments.length - selectedAssessmentIndex}`}
+                  </h3>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                    Official diagnostic evaluation session recorded under student ID profile
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Metrics Cards */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>Correct Answers</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: C.dark, marginTop: 2 }}>
+                    {activeAssessment.correctAnswers} / {activeAssessment.totalQuestions}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: C.s1, marginTop: 1 }}>
+                    {Math.round((activeAssessment.correctAnswers / Math.max(1, activeAssessment.totalQuestions)) * 100)}% Accuracy
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>Duration</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: C.dark, marginTop: 2 }}>
+                    {Math.floor(activeAssessment.timeTakenSeconds / 60)}m {activeAssessment.timeTakenSeconds % 60}s
+                  </div>
+                  <div style={{ fontSize: 10.5, color: C.muted, marginTop: 1 }}>
+                    of 20:00 limit
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>Cadre Target</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: C.dark, marginTop: 2 }}>
+                    75% Target
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 600,
+                      color: activeAssessment.score >= 75 ? C.s1 : C.s4,
+                      marginTop: 1,
+                    }}
+                  >
+                    {activeAssessment.score >= 75
+                      ? `+${activeAssessment.score - 75}% Surplus`
+                      : `-${75 - activeAssessment.score}% Gap`}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div>
+                <button
+                  onClick={() =>
+                    navigate("/student/assessment/results", {
+                      state: {
+                        submission: activeAssessment,
+                        timeTaken: activeAssessment.timeTakenSeconds,
+                        answers: activeAssessment.userAnswers,
+                      },
+                    })
+                  }
+                  style={{
+                    padding: "10px 18px",
+                    background: "#1B3D29",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 8,
+                    fontFamily: FONT.body,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 2px 8px rgba(27, 61, 41, 0.25)",
+                  }}
+                >
+                  View Evaluation Results →
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Select Pill Buttons for the 5 assessments */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 16,
+                paddingTop: 14,
+                borderTop: `1px dashed ${C.border}`,
+                flexWrap: "wrap",
+              }}
+            >
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: C.muted }}>Quick Switch:</span>
+              {previousFiveAssessments.map((item, idx) => {
+                const isSelected = idx === selectedAssessmentIndex;
+                return (
+                  <button
+                    key={item.id || idx}
+                    onClick={() => setSelectedAssessmentIndex(idx)}
+                    style={{
+                      padding: "4px 12px",
+                      borderRadius: 20,
+                      border: `1.5px solid ${isSelected ? C.dark : C.border}`,
+                      background: isSelected ? C.dark : C.surface,
+                      color: isSelected ? "#fff" : C.dark,
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <span>{idx === 0 ? "Latest" : `Test #${previousFiveAssessments.length - idx}`}</span>
+                    <span
+                      style={{
+                        color: isSelected ? C.accent : getScoreColor(item.score),
+                        fontWeight: 800,
+                      }}
+                    >
+                      {item.score}%
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Dynamic Competency Radar Overview */}

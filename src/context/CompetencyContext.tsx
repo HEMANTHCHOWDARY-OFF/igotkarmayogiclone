@@ -29,6 +29,8 @@ export interface DiagnosticQuestion {
 }
 
 export interface AssessmentSubmission {
+  id?: string;
+  title?: string;
   date: string;
   score: number;
   totalQuestions: number;
@@ -98,8 +100,13 @@ interface CompetencyContextType {
   domains: MoSPIDomain[];
   demonstratedScores: Record<string, number>;
   lastAssessment: AssessmentSubmission | null;
+  assessmentHistory: AssessmentSubmission[];
   assessmentCompleted: boolean;
-  submitDiagnosticAssessment: (answers: (number | null)[], timeTakenSeconds: number) => AssessmentSubmission;
+  submitDiagnosticAssessment: (
+    answers: (number | null)[],
+    timeTakenSeconds: number,
+    customQuestions?: DiagnosticQuestion[]
+  ) => AssessmentSubmission;
   getGapMetrics: () => GapMetric[];
   getSkillHealthScore: () => number;
   resetToDefaults: () => void;
@@ -580,7 +587,61 @@ export const INITIAL_GENERATED_MCQS: AIGeneratedMCQ[] = [
   },
 ];
 
+export const DEFAULT_ASSESSMENT_HISTORY: AssessmentSubmission[] = [
+  {
+    id: "sub_mock_1",
+    title: "National Competency AI Diagnostic #5",
+    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
+    score: 80,
+    totalQuestions: 10,
+    correctAnswers: 8,
+    timeTakenSeconds: 710,
+    userAnswers: [0, 0, 1, 0, 0, 0, 2, 0, 0, 0],
+  },
+  {
+    id: "sub_mock_2",
+    title: "PLFS Survey Imputation & Microdata Test #4",
+    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(),
+    score: 70,
+    totalQuestions: 10,
+    correctAnswers: 7,
+    timeTakenSeconds: 840,
+    userAnswers: [0, 1, 0, 0, 2, 0, 0, 0, 1, 0],
+  },
+  {
+    id: "sub_mock_3",
+    title: "PostgreSQL & Analytical Schema Diagnostic #3",
+    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
+    score: 60,
+    totalQuestions: 10,
+    correctAnswers: 6,
+    timeTakenSeconds: 960,
+    userAnswers: [0, 2, 0, 1, 0, 3, 0, 0, 0, 0],
+  },
+  {
+    id: "sub_mock_4",
+    title: "Applied Probability & Sampling Theory #2",
+    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
+    score: 75,
+    totalQuestions: 10,
+    correctAnswers: 7,
+    timeTakenSeconds: 810,
+    userAnswers: [0, 0, 0, 1, 0, 0, 0, 2, 1, 0],
+  },
+  {
+    id: "sub_mock_5",
+    title: "Initial Statistical Cadre Diagnostic Baseline #1",
+    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 21).toISOString(),
+    score: 50,
+    totalQuestions: 10,
+    correctAnswers: 5,
+    timeTakenSeconds: 1080,
+    userAnswers: [0, 1, 2, 0, 3, 0, 1, 0, 0, 2],
+  },
+];
+
 const STORAGE_KEY = "gyanmarg_competency_state_v1";
+const HISTORY_STORAGE_KEY = "gyanmarg_assessment_history_v1";
 const DOCS_STORAGE_KEY = "gyanmarg_ingested_docs_v1";
 const QUESTIONS_STORAGE_KEY = "gyanmarg_generated_mcqs_v1";
 const PRACTICE_STORAGE_KEY = "gyanmarg_practice_submissions_v1";
@@ -661,6 +722,23 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
     }
     return false;
   });
+
+  const [assessmentHistory, setAssessmentHistory] = useState<AssessmentSubmission[]>(() => {
+    const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.error("Failed to load assessment history", e);
+      }
+    }
+    return DEFAULT_ASSESSMENT_HISTORY;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(assessmentHistory));
+  }, [assessmentHistory]);
 
   const [ingestedDocuments, setIngestedDocuments] = useState<IngestedDocument[]>(() => {
     const saved = localStorage.getItem(DOCS_STORAGE_KEY);
@@ -880,13 +958,15 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
   // Submit diagnostic assessment
   const submitDiagnosticAssessment = (
     answers: (number | null)[],
-    timeTakenSeconds: number
+    timeTakenSeconds: number,
+    customQuestions?: DiagnosticQuestion[]
   ): AssessmentSubmission => {
+    const questionList = customQuestions && customQuestions.length > 0 ? customQuestions : DIAGNOSTIC_QUESTIONS;
     let totalCorrect = 0;
     const domainScoresAcc: Record<string, { correct: number; total: number }> = {};
 
     // Initialize domain tally
-    DIAGNOSTIC_QUESTIONS.forEach((q) => {
+    questionList.forEach((q) => {
       if (!domainScoresAcc[q.domainId]) {
         domainScoresAcc[q.domainId] = { correct: 0, total: 0 };
       }
@@ -894,16 +974,18 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
     });
 
     // Score answers
-    DIAGNOSTIC_QUESTIONS.forEach((q, idx) => {
+    questionList.forEach((q, idx) => {
       const userAns = answers[idx];
       if (userAns === q.correct) {
         totalCorrect += 1;
-        domainScoresAcc[q.domainId].correct += 1;
+        if (domainScoresAcc[q.domainId]) {
+          domainScoresAcc[q.domainId].correct += 1;
+        }
       }
     });
 
-    const totalQuestions = DIAGNOSTIC_QUESTIONS.length;
-    const scorePercentage = Math.round((totalCorrect / totalQuestions) * 100);
+    const totalQuestions = questionList.length;
+    const scorePercentage = Math.round((totalCorrect / Math.max(1, totalQuestions)) * 100);
 
     // Update demonstrated domain scores
     const updatedDomains = domains.map((d) => {
@@ -919,6 +1001,10 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
     });
 
     const submission: AssessmentSubmission = {
+      id: `sub_${Date.now()}`,
+      title: customQuestions && (customQuestions[0] as any)?.courseTitle
+        ? `${(customQuestions[0] as any).courseTitle} Mastery Assessment`
+        : `National Competency AI Diagnostic #${assessmentHistory.length + 1}`,
       date: new Date().toISOString(),
       score: scorePercentage,
       totalQuestions,
@@ -930,6 +1016,7 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
     setDomains(updatedDomains);
     setLastAssessment(submission);
     setAssessmentCompleted(true);
+    setAssessmentHistory((prev) => [submission, ...prev.filter((s) => s.id !== submission.id)].slice(0, 10));
 
     return submission;
   };
@@ -1048,10 +1135,12 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
     setDomains(MOSPI_DOMAINS_DEFAULT);
     setLastAssessment(null);
     setAssessmentCompleted(false);
+    setAssessmentHistory(DEFAULT_ASSESSMENT_HISTORY);
     setIngestedDocuments(INITIAL_INGESTED_DOCS);
     setGeneratedQuestions(INITIAL_GENERATED_MCQS);
     setPracticeSubmissions([]);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(HISTORY_STORAGE_KEY);
     localStorage.removeItem(DOCS_STORAGE_KEY);
     localStorage.removeItem(QUESTIONS_STORAGE_KEY);
     localStorage.removeItem(PRACTICE_STORAGE_KEY);
@@ -1068,6 +1157,7 @@ export function CompetencyProvider({ children }: { children: React.ReactNode }) 
         domains,
         demonstratedScores,
         lastAssessment,
+        assessmentHistory,
         assessmentCompleted,
         submitDiagnosticAssessment,
         getGapMetrics,

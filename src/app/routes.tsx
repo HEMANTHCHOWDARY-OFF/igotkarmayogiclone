@@ -52,6 +52,14 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: "/student/assessment/exam",
+    element: (
+      <ProtectedRoute requiredRole="student" requireOnboarding={true}>
+        <Assessment />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/student",
     element: (
       <ProtectedRoute requiredRole="student" requireOnboarding={true}>
