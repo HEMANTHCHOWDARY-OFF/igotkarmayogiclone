@@ -29,6 +29,10 @@ AI where natural-language reasoning and personalization provide value.
 
 ## 2. High-Level Architecture
 
+<p align="center">
+  <img src="../docs/system_architecture_diagram.png" alt="GyanMarg AI Complete Architecture" width="100%" />
+</p>
+
 ``` text
                                   ┌───────────────────────┐
                                   │         USERS         │

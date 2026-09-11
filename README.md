@@ -8,6 +8,10 @@ $$\text{Diagnostic Assessment} \longrightarrow \text{AI Gap Analysis} \longright
 
 ## 1. Core Architecture & Workflow
 
+<p align="center">
+  <img src="docs/system_architecture_diagram.png" alt="GyanMarg AI Complete Architecture" width="100%" />
+</p>
+
 GyanMarg AI is designed around an unbroken competency loop rather than isolated vanity interfaces:
 
 ```
