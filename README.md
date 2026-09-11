@@ -65,6 +65,76 @@ GyanMarg AI is designed around an unbroken competency loop rather than isolated 
 
 > **Student Onboarding Flow:** After student authentication, GyanMarg guides the learner through an interested-course selection step before entering the student learning dashboard. Course preferences are persisted for personalization, while the onboarding screen is intentionally presented at the start of each demo session.
 
+### 1.1 RAG (Retrieval-Augmented Generation) Architecture
+
+GyanMarg AI integrates an end-to-end Retrieval-Augmented Generation (RAG) engine grounded in the official 5,400+ iGOT Karmayogi course catalog to prevent LLM hallucinations, guarantee real course links, and dynamically personalize learning:
+
+```mermaid
+flowchart TD
+    A["Student Context: Profile + Interests + Gaps + Level"] --> B["RAG Query Construction"]
+    B --> C["Vector Similarity Search"]
+    C --> D["Supabase pgvector / Local Vector Index"]
+    D --> E[("Course Knowledge Base: 5,400+ Courses")]
+    E --> F{"Relevant Courses Found?"}
+
+    F -- "Yes: Score >= Threshold" --> G["Build Grounded Course Context"]
+    G --> H["Groq Prompt with Strict Grounding Rules"]
+    H --> I["Grounded AI Output: Real Course IDs, Titles, Outcomes, Links"]
+
+    F -- "No: Below Threshold" --> J["Fallback Context: General Knowledge Mode"]
+    J --> K["Groq Prompt with General Knowledge Flag"]
+    K --> L["General AI Output: Explains no matching platform course was found"]
+
+    subgraph Integration_Areas ["Core RAG Integration Areas"]
+        M1["1. AI Course Recommendations"]
+        M2["2. Personalized Learning Paths"]
+        M3["3. Grounded MCQ Generation"]
+        M4["4. Knowledge Gap Remediation"]
+        M5["5. Growth Weakness Analysis"]
+    end
+
+    I --> M1
+    I --> M2
+    I --> M3
+    I --> M4
+    I --> M5
+
+    L --> M1
+    L --> M2
+    L --> M3
+    L --> M4
+    L --> M5
+
+    style A fill:#1B3D29,stroke:#D5CEBC,color:#FAF7F0
+    style B fill:#FAF7F0,stroke:#1B3D29,color:#1B3D29
+    style C fill:#FAF7F0,stroke:#C6851B,color:#1B3D29
+    style D fill:#1B3D29,stroke:#C6851B,color:#FAF7F0
+    style E fill:#C6851B,stroke:#1B3D29,color:#FFFFFF
+    style F fill:#FEF3C7,stroke:#C6851B,color:#92400E
+    style G fill:#E8F2EC,stroke:#1B6B40,color:#1B3D29
+    style H fill:#1B3D29,stroke:#D5CEBC,color:#FAF7F0
+    style I fill:#E8F2EC,stroke:#1B6B40,color:#1B3D29
+    style J fill:#FFFBEB,stroke:#C6851B,color:#92400E
+    style K fill:#FAF7F0,stroke:#1B3D29,color:#1B3D29
+    style L fill:#FAF7F0,stroke:#8A9E8E,color:#5A6B5E
+    style Integration_Areas fill:#FAF7F0,stroke:#D5CEBC,color:#1B3D29
+```
+
+#### RAG Execution Stages
+
+1. **Student Context Aggregation**: Collects learner profile, selected domains, diagnosed competency gaps (e.g. 40% deficit in Statistics), and current level.
+2. **Semantic Query Construction**: Translates student deficits and learning goals into dense semantic search terms.
+3. **Vector Similarity Search**: Executes high-dimensional vector search against the 5,400+ course knowledge base using Supabase `pgvector` (HNSW indexing with cosine distance) with local in-memory cosine fallback.
+4. **Anti-Hallucination Grounding Gate**:
+   - **Score $\ge$ Threshold ($\ge 0.65$)**: Injects strictly grounded course metadata (exact IDs, real titles, verified durations, and URLs) into Groq LLM context (`llama-3.3-70b-versatile`). The LLM is constrained to only reference existing courses.
+   - **Score $<$ Threshold**: Shifts into transparent General Knowledge Mode, advising the learner that no exact catalog course covers this niche while providing foundational guidance without inventing fake course IDs.
+5. **Multi-Domain Downstream Integration**: Drives 5 platform capabilities:
+   - **AI Course Recommendations**: Ranked catalog suggestions directly addressing user-specific deficits.
+   - **Personalized Learning Paths**: 4-phase milestone roadmaps populated with real course prerequisites.
+   - **Grounded MCQ Generation**: Practice quizzes linked to exact chapters, documents, and syllabus modules.
+   - **Knowledge Gap Remediation**: Direct 1-click remediation paths on the student dashboard.
+   - **Growth Weakness Analysis**: Longitudinal skill tracking and targeted study suggestions.
+
 ---
 
 ## 2. The Core MVP Features
@@ -82,10 +152,11 @@ All Core MVP features defined in the engineering specifications are 100% impleme
 | **7** | **Instant Auto-Evaluation & Citations** | Instant scoring engine displaying percentage mastery, correct answer highlights, technical explanations, and verifiable page citations. | `src/pages/student/AssessmentResults.tsx` |
 | **8** | **Personalized Course Recommendations** | Gap-prioritized course sorting that automatically places courses bridging the user's largest measured deficit first, with explicit gap justification banners. | `src/pages/student/CourseDiscovery.tsx` |
 | **9** | **Curated Capacity-Building Catalog** | 22 civil service capacity-building courses across 5 competency domains, featuring NSSTA TPAC endorsement badges. | `src/data/igotCourses.ts`, `src/pages/student/CourseDetails.tsx` |
-| **10**| **Learner Progress Dashboard** | Live Composite Skill Health Score (0–100), domain comparison BarChart, dynamic priority gap remediation alert, and evaluation timeline feed. | `src/pages/student/Dashboard.tsx` |
+| **10**| **Learner Progress Dashboard** | Human-designed, uncluttered student command center with "Jump Back In" hero card, unified 4-stat KPI row, interactive course tabs, and clean competency comparison chart. | `src/pages/student/Dashboard.tsx` |
 | **11**| **Interactive Learning Path Roadmaps** | Visual flowchart roadmap inspired by roadmap.sh, featuring an SVG connecting spine, milestone anchor hubs, subtopic chips, and a slide-out inspector drawer. | `src/pages/student/LearningPath.tsx` |
 | **12**| **Centralized i18n Internationalization** | Modular translation engine supporting English (`en`), Hindi (`hi`), Telugu (`te`), and Tamil (`ta`), with zero-refresh reactive switching, English fallback, and accessible multi-language selector. | `src/i18n/`, `src/context/LanguageContext.tsx`, `src/components/LanguageSelector.tsx` |
 | **13**| **Interactive Game-Style Guided Tutorial** | 6-stage quest tour onboarding with SVG spotlight mask cutout, pulsing amber frame, quest cards with XP progress bar, keyboard navigation, and celebratory completion screen. | `src/components/tutorial/`, `src/context/TutorialContext.tsx`, `src/layouts/PublicLayout.tsx` |
+| **14**| **RAG Vector Search & Anti-Hallucination Engine** | End-to-end semantic vector retrieval engine built on Supabase `pgvector` and 5,400+ official iGOT Karmayogi courses with cosine distance similarity ranking, strict grounding gates, and zero-hallucination fallback. | `src/services/rag/ragService.ts`, `src/services/rag/courseVectorStore.ts`, `supabase/migrations/20260911_rag_pgvector_setup.sql` |
 
 ---
 
@@ -93,6 +164,14 @@ All Core MVP features defined in the engineering specifications are 100% impleme
 
 - **Frontend Core:** React 19, TypeScript, Vite 8
 - **Styling & Design Tokens:** Vanilla CSS design token system (`src/tokens.ts`, `src/index.css`) with warm parchment (`#EDE8D8`), deep forest green (`#1B3D29`), and golden amber (`#C6851B`) accents
+- **RAG & Vector Retrieval:**
+  - **Vector Database:** Supabase `pgvector` extension with HNSW indexing and cosine similarity operator (`<=>`)
+  - **Vector Store & Indexer:** `src/services/rag/courseVectorStore.ts` with local embedding fallback and persistent in-memory vector cache
+  - **Knowledge Base:** 5,400+ indexed official iGOT Karmayogi catalog courses across governance, statistical, and technology competencies
+  - **Anti-Hallucination Pipeline:** Dual-mode threshold gate (`src/services/rag/ragService.ts`) enforcing catalog-grounded generation or explicit fallback
+- **LLM Reasoning & Question Synthesis:**
+  - **Groq API:** Ultra-fast inference with `llama-3.3-70b-versatile` and `mixtral-8x7b-32768`
+  - **Strict Grounding:** Prompt system enforcing verifiable course IDs, syllabus citations, and structured JSON schemas
 - **Internationalization (i18n):** Type-safe centralized dictionary engine with English fallback and parameter interpolation
 - **Interactive Tour Engine:** Custom game-style guided tutorial with SVG mask spotlight, dynamic viewport clamping, and smooth scroll orchestration
 - **Data Visualizations:** Recharts (Dual-polygon RadarChart, Competency Comparison BarChart, AreaChart)

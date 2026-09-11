@@ -598,42 +598,84 @@ than repeatedly sending the complete video to an LLM.
 
 ------------------------------------------------------------------------
 
-## 13. RAG Retrieval Pipeline
+## 13. RAG Retrieval Pipeline & Decision Architecture
 
-``` text
-User Question / Skill Gap
-          │
-          ▼
-Edge Function
-          │
-          ▼
-Query Embedding
-          │
-          ▼
-pgvector Similarity Search
-          │
-          ▼
-Top-K Relevant Chunks
-          │
-          ▼
-Optional Re-ranking
-          │
-          ▼
-Relevant Context
-          │
-          ▼
-Prompt Construction
-          │
-          ▼
-Groq API
-          │
-          ▼
-Grounded AI Response
+```mermaid
+flowchart TD
+    A["Student Context: Profile + Interests + Gaps + Level"] --> B["RAG Query Construction"]
+    B --> C["Vector Similarity Search"]
+    C --> D["Supabase pgvector / Local Vector Index"]
+    D --> E[("Course Knowledge Base: 5,400+ Courses")]
+    E --> F{"Relevant Courses Found?"}
+
+    F -- "Yes: Score >= Threshold" --> G["Build Grounded Course Context"]
+    G --> H["Groq Prompt with Strict Grounding Rules"]
+    H --> I["Grounded AI Output: Real Course IDs, Titles, Outcomes, Links"]
+
+    F -- "No: Below Threshold" --> J["Fallback Context: General Knowledge Mode"]
+    J --> K["Groq Prompt with General Knowledge Flag"]
+    K --> L["General AI Output: Explains no matching platform course was found"]
+
+    subgraph Integration_Areas ["Core RAG Integration Areas"]
+        M1["1. AI Course Recommendations"]
+        M2["2. Personalized Learning Paths"]
+        M3["3. Grounded MCQ Generation"]
+        M4["4. Knowledge Gap Remediation"]
+        M5["5. Growth Weakness Analysis"]
+    end
+
+    I --> M1
+    I --> M2
+    I --> M3
+    I --> M4
+    I --> M5
+
+    L --> M1
+    L --> M2
+    L --> M3
+    L --> M4
+    L --> M5
 ```
 
-The same RAG infrastructure can support both Student and Mentor modules,
-while the retrieved context is filtered according to the user's role and
-request.
+``` text
+Student Context: Profile + Interests + Gaps + Level
+                  │
+                  ▼
+       RAG Query Construction
+                  │
+                  ▼
+       Vector Similarity Search
+                  │
+                  ▼
+  Supabase pgvector / Local Vector Index
+                  │
+                  ▼
+Course Knowledge Base: 5,400+ Courses
+                  │
+                  ▼
+       Relevant Courses Found?
+         /                 \
+ Yes (Score >= Threshold)   No (Below Threshold)
+        │                             │
+        ▼                             ▼
+Build Grounded Context      Fallback: General Knowledge Mode
+        │                             │
+        ▼                             ▼
+Groq (Strict Grounding)     Groq (General Knowledge Flag)
+        │                             │
+        ▼                             ▼
+Grounded AI Output          General AI Advisory
+(Real Course IDs, Links)    (Explains no catalog match)
+        │                             │
+        └──────────────┬──────────────┘
+                       │
+       ┌───────────────┼───────────────┬───────────────┬───────────────┐
+       ▼               ▼               ▼               ▼               ▼
+1. AI Course    2. Learning     3. Grounded     4. Knowledge    5. Growth
+Recommendations    Paths           MCQs            Gaps         Weaknesses
+```
+
+The same RAG infrastructure supports Student, Mentor, and Assessment modules with strict anti-hallucination guarantees and role-filtered context.
 
 ------------------------------------------------------------------------
 
