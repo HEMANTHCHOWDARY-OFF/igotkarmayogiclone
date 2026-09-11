@@ -1,4 +1,11 @@
 import { IGOTCatalogCourse } from "./karmayogiCoursesService";
+import {
+  retrieveCoursesForStudent,
+  retrieveCoursesForTopicOrGap,
+  buildRAGPromptContext,
+  getAntiHallucinationInstructions,
+} from "./rag/ragService";
+import type { StudentQueryContext } from "./rag/ragTypes";
 
 export interface RoadmapSubItem {
   id: string;
@@ -36,9 +43,14 @@ export interface FullCourseRoadmapData {
   domain: string;
   overview: string;
   blocks: RoadmapCourseBlock[];
+  isRAGGrounded?: boolean;
+  notice?: string;
 }
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
+const GROQ_API_KEY =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_GROQ_API_KEY) ||
+  (typeof process !== "undefined" && process.env?.VITE_GROQ_API_KEY) ||
+  "";
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
 /**
@@ -85,7 +97,7 @@ export function generateProceduralRoadmapForCourse(course: IGOTCatalogCourse): F
           ],
         },
       ],
-      learningOutcomes: [
+      learningOutcomes: course.outcomes?.slice(0, 2) || [
         `Understand the statutory basis and organizational role of ${coreKey}`,
         `Identify primary governance stakeholders and statutory responsibilities`,
       ],
@@ -124,7 +136,7 @@ export function generateProceduralRoadmapForCourse(course: IGOTCatalogCourse): F
           ],
         },
       ],
-      learningOutcomes: [
+      learningOutcomes: course.outcomes?.slice(2, 4) || [
         `Execute standard administrative workflows with 100% compliance`,
         `Apply anomaly detection and dispute handling mechanisms`,
       ],
@@ -213,11 +225,13 @@ export function generateProceduralRoadmapForCourse(course: IGOTCatalogCourse): F
     domain,
     overview: course.desc || `Structured capacity-building path for ${course.title}`,
     blocks,
+    isRAGGrounded: true,
   };
 }
 
 /**
  * Use Groq AI to divide any course into roadmap.sh style blocks and sub-branches
+ * grounded in the course's retrieved learning outcomes and syllabus.
  */
 export async function generateAIRoadmapForCourse(
   course: IGOTCatalogCourse,
@@ -229,21 +243,27 @@ export async function generateAIRoadmapForCourse(
     return fallback;
   }
 
-  const prompt = `You are an expert curriculum architect for India's iGOT Karmayogi civil service and capacity-building initiative.
-Generate a structured, step-by-step Learning Path Roadmap in the style of roadmap.sh for the course:
-"${course.title}"
+  const outcomesStr = course.outcomes?.join("; ") || "Core competency development";
+  const prompt = `You are an expert curriculum architect for India's iGOT Karmayogi capacity-building platform.
+Generate a structured, step-by-step Learning Path Roadmap in the style of roadmap.sh for the official course:
+Course Title: "${course.title}"
 Domain: "${course.domain}"
-Course Context: "${(course.desc || "").slice(0, 300)}"
-${customFocus ? `Learner Custom Focus: "${customFocus}"` : ""}
+Course Code: "${course.code}"
+Duration: ${course.duration} hours
+Difficulty: "${course.level}"
+Learning Outcomes: "${outcomesStr}"
+Course Syllabus Context: "${(course.desc || "").slice(0, 400)}"
+${customFocus ? `Learner Focus: "${customFocus}"` : ""}
 
 Divide this course into 3 to 4 sequential main milestone blocks (like the central spine of roadmap.sh).
+Ground each block strictly in the provided learning outcomes and syllabus:
 For each milestone block, provide:
 - blockTitle: concise title of the core topic/module
 - shortDesc: 1 sentence summary
 - durationHours: estimated hours (1-4)
 - leftBranches: 1-2 branch cards to the left side with 2-3 specific sub-concepts/practical tools each
 - rightBranches: 1-2 branch cards to the right side with 2-3 specific sub-concepts/rules/metrics each
-- learningOutcomes: 2 concrete bullet points
+- learningOutcomes: 2 concrete bullet points grounded in the course outcomes
 
 Output strictly valid JSON matching this schema:
 {
@@ -357,6 +377,7 @@ Output strictly valid JSON matching this schema:
       domain: course.domain,
       overview: parsed.overview || course.desc || "",
       blocks,
+      isRAGGrounded: true,
     };
   } catch (err) {
     console.warn("Error calling Groq for AI roadmap:", err);
@@ -365,7 +386,139 @@ Output strictly valid JSON matching this schema:
 }
 
 /**
- * Ask the Roadmap AI Tutor a question about a specific block or concept
+ * Generates an end-to-end multi-course personalized learning path using RAG retrieval.
+ * Retrieves real courses matching student's goal, skills, and gaps, then sequences them logically.
+ */
+export async function generatePersonalizedLearningPathRAG(
+  studentContext: StudentQueryContext,
+  targetGoal?: string
+): Promise<FullCourseRoadmapData> {
+  const goal = targetGoal || studentContext.goal || "Comprehensive Civil Service Capacity Building";
+
+  // 1. Retrieve courses matching the student's target goal and knowledge gaps
+  const ragResult = await retrieveCoursesForStudent(
+    {
+      ...studentContext,
+      goal,
+    },
+    { limit: 5, threshold: 0.16 }
+  );
+
+  const isGrounded = ragResult.isGrounded && ragResult.retrievedCourses.length > 0;
+  const retrievedCourses = ragResult.retrievedCourses;
+
+  if (!isGrounded || retrievedCourses.length === 0) {
+    return {
+      courseId: "general-learning-path",
+      courseTitle: `Personalized Path: ${goal}`,
+      domain: "General Capacity Building",
+      overview: "No matching courses were found in the current GyanMarg database. Here is a recommended general learning trajectory based on domain standards.",
+      isRAGGrounded: false,
+      notice: "I couldn't find a matching course in the current GyanMarg course database. Based on general knowledge, here is a foundational roadmap.",
+      blocks: [
+        {
+          id: "gen-block-1",
+          courseId: "general-foundation",
+          courseTitle: "Conceptual Foundations & Legal Context",
+          domain: "Foundations",
+          blockNumber: 1,
+          blockTitle: "Foundations & Terminology",
+          shortDesc: "Understand fundamental administrative guidelines and basic operational theory.",
+          durationHours: 4,
+          status: "todo",
+          importance: "Core",
+          leftBranches: [{ id: "gb-1-l", side: "left", items: [{ id: "g1", title: "Core Definitions", status: "todo" }] }],
+          rightBranches: [{ id: "gb-1-r", side: "right", items: [{ id: "g2", title: "Statutory Standards", status: "todo" }] }],
+          learningOutcomes: ["Master foundational concepts", "Understand key legal framework"],
+        },
+        {
+          id: "gen-block-2",
+          courseId: "general-applied",
+          courseTitle: "Applied Workflows & Implementation",
+          domain: "Applied Skills",
+          blockNumber: 2,
+          blockTitle: "Applied Field Execution",
+          shortDesc: "Practical methods, data tools, and procedural implementation.",
+          durationHours: 6,
+          status: "todo",
+          importance: "Advanced",
+          leftBranches: [{ id: "gb-2-l", side: "left", items: [{ id: "g3", title: "Workflow Execution", status: "todo" }] }],
+          rightBranches: [{ id: "gb-2-r", side: "right", items: [{ id: "g4", title: "Verification Procedures", status: "todo" }] }],
+          learningOutcomes: ["Execute administrative workflows", "Apply quality assurance"],
+        },
+      ],
+    };
+  }
+
+  // Sort retrieved courses by difficulty: Beginner -> Intermediate -> Advanced
+  const levelOrder: Record<string, number> = { beginner: 1, intermediate: 2, advanced: 3 };
+  const sortedCourses = [...retrievedCourses].sort((a, b) => {
+    const orderA = levelOrder[a.level?.toLowerCase() || "beginner"] || 2;
+    const orderB = levelOrder[b.level?.toLowerCase() || "beginner"] || 2;
+    return orderA - orderB;
+  });
+
+  // Convert each retrieved course into a milestone block on the path
+  const blocks: RoadmapCourseBlock[] = sortedCourses.map((c, idx) => {
+    const blockNum = idx + 1;
+    const isFirst = idx === 0;
+    const isLast = idx === sortedCourses.length - 1;
+
+    return {
+      id: `rag-path-${c.id}-${blockNum}`,
+      courseId: String(c.id),
+      courseTitle: c.title,
+      domain: c.domain,
+      blockNumber: blockNum,
+      blockTitle: `Milestone ${blockNum}: ${c.title}`,
+      shortDesc: c.desc || `Master official capabilities in ${c.domain}.`,
+      durationHours: c.duration || 3,
+      status: "todo",
+      importance: isFirst ? "Core" : isLast ? "Recommended" : "Advanced",
+      leftBranches: [
+        {
+          id: `rag-b-${c.id}-l`,
+          title: "Core Competencies",
+          side: "left",
+          items: (c.outcomes || ["Foundational Concepts", "Regulatory SOP"]).slice(0, 2).map((item, i) => ({
+            id: `item-${c.id}-l-${i}`,
+            title: item,
+            status: "todo",
+          })),
+        },
+      ],
+      rightBranches: [
+        {
+          id: `rag-b-${c.id}-r`,
+          title: "Field Standards & Tools",
+          side: "right",
+          items: (c.keywords || [c.domain, c.level]).slice(0, 2).map((item, i) => ({
+            id: `item-${c.id}-r-${i}`,
+            title: item,
+            status: "todo",
+          })),
+        },
+      ],
+      learningOutcomes: c.outcomes?.slice(0, 2) || [
+        `Demonstrate competency in ${c.title}`,
+        `Apply verified practices within ${c.domain}`,
+      ],
+    };
+  });
+
+  return {
+    courseId: String(sortedCourses[0].id),
+    courseTitle: `GyanMarg Path: ${goal}`,
+    domain: sortedCourses[0].domain,
+    overview: `Personalized capacity-building path grounded in ${sortedCourses.length} official GyanMarg platform courses.`,
+    blocks,
+    isRAGGrounded: true,
+  };
+}
+
+/**
+ * Ask the Roadmap AI Tutor a question about a specific block or concept.
+ * Uses RAG to retrieve syllabus context and provide grounded answers.
  */
 export async function askRoadmapAITutor(params: {
   question: string;
@@ -379,6 +532,17 @@ export async function askRoadmapAITutor(params: {
     return `In ${domain} and ${courseTitle}, mastering ${blockTitle} requires understanding foundational SOPs, standard regulatory compliance, and periodic field review. Focus on practicing the key workflows and case studies in your module.`;
   }
 
+  // Retrieve course syllabus context for this question
+  let ragContext = "";
+  try {
+    const ragResult = await retrieveCoursesForTopicOrGap(`${courseTitle} ${blockTitle} ${question}`, { limit: 2 });
+    if (ragResult.isGrounded) {
+      ragContext = ragResult.ragContext;
+    }
+  } catch {
+    // Non-blocking
+  }
+
   try {
     const res = await fetch(GROQ_ENDPOINT, {
       method: "POST",
@@ -388,17 +552,17 @@ export async function askRoadmapAITutor(params: {
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        temperature: 0.4,
+        temperature: 0.3,
         max_tokens: 500,
         messages: [
           {
             role: "system",
             content:
-              "You are the GyanMarg AI Learning Tutor for iGOT Karmayogi. Give concise (2-4 sentences), highly actionable, encouraging answers that directly explain the student's question in the context of Indian public service, policy, and digital governance standards.",
+              "You are the GyanMarg AI Learning Tutor for iGOT Karmayogi. Give concise (2-4 sentences), highly actionable, encouraging answers directly grounded in the official course syllabus context and Indian public service standards.",
           },
           {
             role: "user",
-            content: `Course: "${courseTitle}" (Domain: ${domain})\nRoadmap Block: "${blockTitle}"\nStudent Question: "${question}"`,
+            content: `Course: "${courseTitle}" (Domain: ${domain})\nRoadmap Block: "${blockTitle}"\nStudent Question: "${question}"\n${ragContext ? `Official Stored Course Context:\n${ragContext}` : ""}`,
           },
         ],
       }),

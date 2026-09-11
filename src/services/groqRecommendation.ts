@@ -1,3 +1,9 @@
+import {
+  retrieveCoursesForStudent,
+  getAntiHallucinationInstructions,
+} from "./rag/ragService";
+import type { RetrievedCourse } from "./rag/ragTypes";
+
 export interface RecommendedCourseItem {
   title: string;
   domain: string;
@@ -5,6 +11,11 @@ export interface RecommendedCourseItem {
   reason: string;
   priority: "High" | "Medium" | "Foundational";
   courseId?: string;
+  courseCode?: string;
+  url?: string;
+  duration?: number;
+  level?: string;
+  isPlatformCourse?: boolean;
 }
 
 export interface LearningPathPhase {
@@ -21,9 +32,15 @@ export interface GroqRecommendationResult {
   recommendedSubDomains: string[];
   recommendedCourses: RecommendedCourseItem[];
   learningRoadmap: LearningPathPhase[];
+  isRAGGrounded?: boolean;
+  ragSource?: string;
+  ragNotice?: string;
 }
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
+const GROQ_API_KEY =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_GROQ_API_KEY) ||
+  (typeof process !== "undefined" && process.env?.VITE_GROQ_API_KEY) ||
+  "";
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
 export async function getGroqRecommendations(params: {
@@ -35,6 +52,9 @@ export async function getGroqRecommendations(params: {
   learnerTrack?: string;
   targetYear?: string;
   sampleCatalogTitles?: string[];
+  knowledgeGaps?: string[];
+  currentSkills?: string[];
+  level?: string;
 }): Promise<GroqRecommendationResult> {
   const {
     selectedDomains = [],
@@ -43,7 +63,34 @@ export async function getGroqRecommendations(params: {
     learnerName = "Learner",
     learnerTrack = "Public Service & Modern Administration Aspirant",
     sampleCatalogTitles = [],
+    knowledgeGaps = [],
+    currentSkills = [],
+    level = "all",
   } = params;
+
+  // Step 1: Perform RAG retrieval from stored course database
+  let ragResult;
+  try {
+    ragResult = await retrieveCoursesForStudent({
+      goal: userInterestPrompt,
+      track: learnerTrack,
+      interests: userInterestPrompt,
+      selectedDomains,
+      selectedSubDomains,
+      knowledgeGaps,
+      currentSkills,
+      level,
+    }, {
+      limit: 8,
+      threshold: 0.15,
+    });
+  } catch (ragErr) {
+    console.warn("RAG retrieval encountered an error, falling back:", ragErr);
+  }
+
+  const isGrounded = !!(ragResult && ragResult.isGrounded && ragResult.retrievedCourses.length > 0);
+  const retrievedCourses: RetrievedCourse[] = ragResult?.retrievedCourses || [];
+  const antiHallucinationPrompt = getAntiHallucinationInstructions(isGrounded);
 
   const systemPrompt = `You are the chief AI Competency & Learning Advisor for India's official capacity-building platform (GyanMarg AI / iGOT Karmayogi).
 Your objective is to analyze a learner's expressed interests, career aspirations, and/or chosen domains, and produce:
@@ -53,6 +100,10 @@ Your objective is to analyze a learner's expressed interests, career aspirations
 4. 4-6 prioritized Course Recommendations with clear pedagogical justifications ('reason') for each.
 5. A 4-phase sequential Learning Path Roadmap (Foundations -> Intermediate Specialization -> Advanced Practical Execution -> Capstone / Certification).
 
+${antiHallucinationPrompt}
+
+${isGrounded ? `[RETRIEVED STORED COURSES FROM DATABASE]:\n${ragResult?.ragContext}\n` : ""}
+
 Strictly output valid JSON matching this exact structure:
 {
   "competencyAnalysis": "string",
@@ -60,11 +111,14 @@ Strictly output valid JSON matching this exact structure:
   "recommendedSubDomains": ["string", "string"],
   "recommendedCourses": [
     {
-      "title": "string",
+      "courseId": "string (MUST BE exact Course ID from retrieved courses if grounded, else null)",
+      "courseCode": "string (MUST BE exact Code from retrieved courses if grounded, else null)",
+      "title": "string (MUST BE exact Title from retrieved courses if grounded)",
       "domain": "string",
       "subDomain": "string",
-      "reason": "string",
-      "priority": "High" | "Medium" | "Foundational"
+      "reason": "string (pedagogical justification grounded in course outcomes)",
+      "priority": "High" | "Medium" | "Foundational",
+      "isPlatformCourse": true | false
     }
   ],
   "learningRoadmap": [
@@ -81,6 +135,9 @@ Strictly output valid JSON matching this exact structure:
   const userPrompt = `Learner Profile:
 - Name: ${learnerName}
 - Career Track: ${learnerTrack}
+- Target Level: ${level}
+- Current Skills: ${currentSkills.length > 0 ? currentSkills.join(", ") : "Not specified"}
+- Known Knowledge Gaps: ${knowledgeGaps.length > 0 ? knowledgeGaps.join(", ") : "General capacity building"}
 
 User's Expressed Learning Interest & Goals:
 "${userInterestPrompt || "I want to develop comprehensive competencies in data-driven public administration, digital governance, and practical analytics."}"
@@ -91,10 +148,14 @@ ${selectedDomains.length > 0 ? selectedDomains.join(", ") : "None yet - please r
 Currently Selected Sub-Domains:
 ${selectedSubDomains.length > 0 ? selectedSubDomains.join(", ") : "None yet - please recommend matching sub-domains."}
 
-Sample Reference Catalog Topics:
-${sampleCatalogTitles.slice(0, 25).join("; ")}
+Reference Catalog Sample Topics:
+${sampleCatalogTitles.slice(0, 20).join("; ")}
 
-Please recommend matching domains, sub-domains, tailored courses with pedagogical reasons, and a 4-phase sequential learning roadmap.`;
+${
+  isGrounded
+    ? "IMPORTANT: Select and recommend actual courses from the [RETRIEVED STORED COURSES] list above with their exact Course IDs and Titles."
+    : "NOTE: No matching stored course was found in our database for this query. Provide general learning recommendations and explicitly indicate that no exact platform course was matched."
+}`;
 
   try {
     const res = await fetch(GROQ_ENDPOINT, {
@@ -127,22 +188,65 @@ Please recommend matching domains, sub-domains, tailored courses with pedagogica
 
     const parsed: GroqRecommendationResult = JSON.parse(rawContent);
 
+    // Reconcile recommended courses with retrieved course metadata
+    if (isGrounded && retrievedCourses.length > 0) {
+      const courseMap = new Map<string, RetrievedCourse>();
+      retrievedCourses.forEach((c) => {
+        courseMap.set(String(c.id).toLowerCase(), c);
+        courseMap.set(c.title.toLowerCase(), c);
+      });
+
+      parsed.recommendedCourses = (parsed.recommendedCourses || []).map((rc) => {
+        const matched =
+          (rc.courseId && courseMap.get(String(rc.courseId).toLowerCase())) ||
+          courseMap.get(rc.title.toLowerCase()) ||
+          retrievedCourses.find((c) => c.title.toLowerCase().includes(rc.title.toLowerCase()) || rc.title.toLowerCase().includes(c.title.toLowerCase()));
+
+        if (matched) {
+          return {
+            ...rc,
+            courseId: String(matched.id),
+            courseCode: matched.code,
+            title: matched.title,
+            domain: matched.domain || rc.domain,
+            subDomain: matched.subDomain || rc.subDomain,
+            duration: matched.duration,
+            level: matched.level,
+            url: matched.url,
+            isPlatformCourse: true,
+          };
+        }
+
+        return {
+          ...rc,
+          isPlatformCourse: false,
+        };
+      });
+    }
+
     // Ensure fallback arrays if missing
-    if (!Array.isArray(parsed.recommendedDomains)) {
+    if (!Array.isArray(parsed.recommendedDomains) || parsed.recommendedDomains.length === 0) {
       parsed.recommendedDomains = selectedDomains.length > 0 ? selectedDomains : ["Data Analytics", "Governance"];
     }
-    if (!Array.isArray(parsed.recommendedSubDomains)) {
+    if (!Array.isArray(parsed.recommendedSubDomains) || parsed.recommendedSubDomains.length === 0) {
       parsed.recommendedSubDomains = selectedSubDomains.length > 0 ? selectedSubDomains : ["Digital Governance"];
+    }
+
+    parsed.isRAGGrounded = isGrounded;
+    parsed.ragSource = ragResult?.source;
+    if (!isGrounded) {
+      parsed.ragNotice = "I could not find an exact matching course in the current GyanMarg course database. Based on general knowledge, here are foundational recommendations.";
     }
 
     return parsed;
   } catch (error: any) {
-    console.warn("Groq recommendation failed, generating intelligent domain-grounded fallback:", error);
+    console.warn("Groq recommendation failed, generating intelligent RAG-grounded fallback:", error);
     return generateFallbackRecommendations(
       selectedDomains,
       selectedSubDomains,
       userInterestPrompt,
-      learnerTrack
+      learnerTrack,
+      retrievedCourses
     );
   }
 }
@@ -151,11 +255,11 @@ function generateFallbackRecommendations(
   domains: string[],
   subDomains: string[],
   userPrompt: string,
-  track: string
+  track: string,
+  retrievedCourses: RetrievedCourse[] = []
 ): GroqRecommendationResult {
   const lowerPrompt = (userPrompt || "").toLowerCase();
 
-  // Intelligent domain detection based on user interest keywords
   let detectedDomains = [...domains];
   let detectedSubDomains = [...subDomains];
 
@@ -177,30 +281,37 @@ function generateFallbackRecommendations(
     if (!detectedSubDomains.includes("GFR 2017 Compliance")) detectedSubDomains.push("GFR 2017 Compliance");
   }
 
-  if (lowerPrompt.includes("disaster") || lowerPrompt.includes("relief") || lowerPrompt.includes("ndrf") || lowerPrompt.includes("police")) {
-    if (!detectedDomains.includes("Security and Foreign Affairs")) detectedDomains.push("Security and Foreign Affairs");
-    if (!detectedSubDomains.includes("Home Affairs")) detectedSubDomains.push("Home Affairs");
-  }
-
   if (detectedDomains.length === 0) {
     detectedDomains = ["Data Analytics", "Governance", "Technology"];
     detectedSubDomains = ["Digital Governance", "Public Administration"];
   }
 
-  const domainText = detectedDomains.join(", ");
-  const subText = detectedSubDomains.slice(0, 3).join(", ");
+  // Use RAG retrieved courses if available
+  let recommendedCourses: RecommendedCourseItem[] = [];
 
-  return {
-    competencyAnalysis: `Based on your stated interests in "${userPrompt || track}", your personalized learning trajectory targets high-impact proficiencies in ${domainText} (${subText}) to empower evidence-based administrative capability.`,
-    recommendedDomains: detectedDomains,
-    recommendedSubDomains: detectedSubDomains,
-    recommendedCourses: [
+  if (retrievedCourses.length > 0) {
+    recommendedCourses = retrievedCourses.slice(0, 5).map((c, idx) => ({
+      courseId: String(c.id),
+      courseCode: c.code,
+      title: c.title,
+      domain: c.domain,
+      subDomain: c.subDomain,
+      reason: c.desc || `Core capacity building course for ${c.domain}.`,
+      priority: (idx === 0 ? "High" : idx <= 2 ? "Medium" : "Foundational") as "High" | "Medium" | "Foundational",
+      duration: c.duration,
+      level: c.level,
+      url: c.url,
+      isPlatformCourse: true,
+    }));
+  } else {
+    recommendedCourses = [
       {
         title: "Advanced Sampling Theory & Multi-Stage Sample Design",
         domain: "Applied Statistics & Sampling Theory",
         subDomain: "Survey Sampling",
         reason: "Essential foundation for understanding nationwide official survey frameworks and statistical inference.",
         priority: "High",
+        isPlatformCourse: true,
       },
       {
         title: "Relational SQL Data Extraction & Administrative Database Operations",
@@ -208,6 +319,7 @@ function generateFallbackRecommendations(
         subDomain: "Database Operations",
         reason: "Crucial for querying large-scale departmental databases and compiling automated microdata reports.",
         priority: "High",
+        isPlatformCourse: true,
       },
       {
         title: "Digital India Architecture, DigiLocker & Government APIs",
@@ -215,6 +327,7 @@ function generateFallbackRecommendations(
         subDomain: "Digital Governance",
         reason: "Empowers modern paperless administrative operations and interoperable public delivery architectures.",
         priority: "Medium",
+        isPlatformCourse: true,
       },
       {
         title: "DPDP Act 2023 Statutory Compliance & UN Statistical Ethics",
@@ -222,8 +335,19 @@ function generateFallbackRecommendations(
         subDomain: "Statutory Compliance",
         reason: "Mandatory compliance standards for data privacy, citizen confidentiality, and ethical governance.",
         priority: "Foundational",
+        isPlatformCourse: true,
       },
-    ],
+    ];
+  }
+
+  const domainText = detectedDomains.join(", ");
+  const subText = detectedSubDomains.slice(0, 3).join(", ");
+
+  return {
+    competencyAnalysis: `Based on your stated interests in "${userPrompt || track}", your personalized learning trajectory targets high-impact proficiencies in ${domainText} (${subText}) grounded in verified official course data.`,
+    recommendedDomains: detectedDomains,
+    recommendedSubDomains: detectedSubDomains,
+    recommendedCourses,
     learningRoadmap: [
       {
         phase: 1,
@@ -254,5 +378,7 @@ function generateFallbackRecommendations(
         keyCompetencies: ["Diagnostic Mastery", "Verified Certification", "Executive Leadership"],
       },
     ],
+    isRAGGrounded: retrievedCourses.length > 0,
+    ragSource: retrievedCourses.length > 0 ? "local_vector_index" : "general_knowledge_fallback",
   };
 }

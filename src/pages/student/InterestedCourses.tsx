@@ -5,6 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import { setSessionOnboardingCompleted } from "@/utils/coursePreferences";
 import {
   igotTaxonomy,
+  igotAllCourses,
+  getCourseById,
   queryKarmayogiCourses,
   TOTAL_IGOT_COURSES_COUNT,
   type IGOTCatalogCourse,
@@ -209,19 +211,27 @@ export default function InterestedCourses() {
       });
     }
 
-    // Find course IDs in catalog matching recommended course titles
-    const recTitles = aiResult.recommendedCourses.map((r) => r.title.toLowerCase());
-    const matchedCourses = manualCatalogResult.courses.filter((c) =>
-      recTitles.some((rt) => c.title.toLowerCase().includes(rt) || rt.includes(c.title.toLowerCase()))
-    );
+    // 1. Gather genuine course IDs from RAG recommendations
+    const directIds = (aiResult.recommendedCourses || [])
+      .map((r) => r.courseId)
+      .filter((id): id is string => Boolean(id && !id.startsWith("ai-rec-")));
 
-    const newIds = matchedCourses.map((c) => c.id);
-    if (newIds.length === 0 && manualCatalogResult.courses.length > 0) {
-      // Pick top 3-4 courses from the active domain as immediate selection
-      const topPicks = manualCatalogResult.courses.slice(0, 4).map((c) => c.id);
-      setSelectedCourseIds((prev) => Array.from(new Set([...prev, ...topPicks])));
+    if (directIds.length > 0) {
+      setSelectedCourseIds((prev) => Array.from(new Set([...prev, ...directIds])));
     } else {
-      setSelectedCourseIds((prev) => Array.from(new Set([...prev, ...newIds])));
+      // Fallback matching across full catalog
+      const recTitles = aiResult.recommendedCourses.map((r) => r.title.toLowerCase());
+      const matchedCourses = igotAllCourses.filter((c) =>
+        recTitles.some((rt) => c.title.toLowerCase().includes(rt) || rt.includes(c.title.toLowerCase()))
+      );
+
+      const newIds = matchedCourses.map((c) => c.id);
+      if (newIds.length === 0 && manualCatalogResult.courses.length > 0) {
+        const topPicks = manualCatalogResult.courses.slice(0, 4).map((c) => c.id);
+        setSelectedCourseIds((prev) => Array.from(new Set([...prev, ...topPicks])));
+      } else {
+        setSelectedCourseIds((prev) => Array.from(new Set([...prev, ...newIds])));
+      }
     }
 
     setStatusMsg({
@@ -1137,16 +1147,22 @@ export default function InterestedCourses() {
                     Recommended Courses for Your Goals
                   </h3>
 
+                  {aiResult.ragNotice && (
+                    <div style={{ padding: "12px 16px", borderRadius: 10, background: "#FFF8E7", border: `1px solid ${C.accent}`, color: "#8A5300", fontSize: 13, marginBottom: 14 }}>
+                      💡 <strong>Notice:</strong> {aiResult.ragNotice}
+                    </div>
+                  )}
+
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
                     {aiResult.recommendedCourses?.map((rc, idx) => {
-                      // Attempt to find matching course in manual catalog
-                      const matched = manualCatalogResult.courses.find(
+                      const directCourse = rc.courseId ? getCourseById(rc.courseId) : undefined;
+                      const matched = directCourse || manualCatalogResult.courses.find(
                         (c) =>
                           c.title.toLowerCase().includes(rc.title.toLowerCase()) ||
                           rc.title.toLowerCase().includes(c.title.toLowerCase())
                       ) || manualCatalogResult.courses[idx % manualCatalogResult.courses.length];
 
-                      const courseIdToUse = matched ? matched.id : `ai-rec-${idx}`;
+                      const courseIdToUse = directCourse ? directCourse.id : matched ? matched.id : `ai-rec-${idx}`;
                       const isSelected = selectedCourseIds.includes(courseIdToUse);
 
                       return (
@@ -1166,7 +1182,7 @@ export default function InterestedCourses() {
                           }}
                         >
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                               <span
                                 style={{
                                   fontSize: 10.5,
@@ -1179,6 +1195,33 @@ export default function InterestedCourses() {
                               >
                                 {rc.priority || "High"} Priority
                               </span>
+                              {rc.isPlatformCourse || rc.courseId ? (
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    background: "#EBF5F0",
+                                    color: C.s1,
+                                    padding: "2px 6px",
+                                    borderRadius: 4,
+                                  }}
+                                >
+                                  ⚡ RAG Grounded
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    background: "#FFF0E6",
+                                    color: "#C05621",
+                                    padding: "2px 6px",
+                                    borderRadius: 4,
+                                  }}
+                                >
+                                  💡 General AI
+                                </span>
+                              )}
                               <span style={{ fontSize: 11, color: C.muted }}>
                                 {rc.domain}
                               </span>

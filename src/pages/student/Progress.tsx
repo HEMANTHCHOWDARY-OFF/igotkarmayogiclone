@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { C, FONT } from "@/tokens";
 import { Link, useNavigate } from "react-router";
 import {
@@ -20,6 +20,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useCompetency } from "@/context/CompetencyContext";
 import { getCoursesByTitlesOrIds, type IGOTCatalogCourse } from "@/services/karmayogiCoursesService";
 import { getCourseProgress, getCurriculumStats } from "@/services/courseProgressService";
+import { retrieveCoursesForTopicOrGap } from "@/services/rag/ragService";
+import type { RetrievedCourse } from "@/services/rag/ragTypes";
 
 function domainColor(score: number) {
   if (score >= 80) return C.s1;
@@ -61,6 +63,43 @@ export default function Progress() {
     if (selectedDomainFilter === "All Domains") return domainScores;
     return domainScores.filter((d) => d.fullName.toLowerCase() === selectedDomainFilter.toLowerCase());
   }, [domainScores, selectedDomainFilter]);
+
+  // Weakest domains for targeted growth remediation
+  const weakDomains = useMemo(() => {
+    return [...domains]
+      .filter((d) => d.currentScore < d.targetBenchmark)
+      .sort((a, b) => (b.targetBenchmark - b.currentScore) - (a.targetBenchmark - a.currentScore))
+      .slice(0, 3);
+  }, [domains]);
+
+  const [ragGrowthCourses, setRagGrowthCourses] = useState<Record<string, RetrievedCourse>>({});
+
+  useEffect(() => {
+    if (weakDomains.length === 0) return;
+
+    let isMounted = true;
+    const fetchGrowthRecs = async () => {
+      const mapped: Record<string, RetrievedCourse> = {};
+      for (const wd of weakDomains) {
+        try {
+          const res = await retrieveCoursesForTopicOrGap(wd.name, { limit: 1 });
+          if (res.isGrounded && res.retrievedCourses.length > 0) {
+            mapped[wd.id] = res.retrievedCourses[0];
+          }
+        } catch {
+          // Graceful fallback
+        }
+      }
+      if (isMounted) {
+        setRagGrowthCourses(mapped);
+      }
+    };
+
+    fetchGrowthRecs();
+    return () => {
+      isMounted = false;
+    };
+  }, [weakDomains]);
 
   // Overall competency trend calculated around student's actual health score
   const competencyOverTime = useMemo(() => {
@@ -508,6 +547,109 @@ export default function Progress() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* AI Growth Recommendations & Weakness Remediation (Powered by RAG) */}
+      {weakDomains.length > 0 && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, #1B3D29 0%, #0F281B 100%)",
+            borderRadius: 14,
+            padding: "24px 26px",
+            color: "#fff",
+            marginBottom: 20,
+            boxShadow: "0 6px 20px rgba(27, 61, 41, 0.18)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 20 }}>🎯</span>
+                <h3 style={{ fontFamily: FONT.display, fontSize: 17, fontWeight: 800, margin: 0 }}>
+                  AI Growth Remediation: Next Steps for Competency Weaknesses
+                </h3>
+              </div>
+              <div style={{ fontSize: 13, color: "#D4E8D8", marginTop: 4 }}>
+                RAG analyzed your {weakDomains.length} deficit domain{weakDomains.length > 1 ? "s" : ""} and retrieved official platform courses to close your weaknesses.
+              </div>
+            </div>
+            <Link
+              to="/student/gap-analysis"
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: C.accent,
+                textDecoration: "none",
+                background: "rgba(255,255,255,0.1)",
+                padding: "6px 14px",
+                borderRadius: 6,
+                border: "1px solid rgba(255,255,255,0.2)",
+              }}
+            >
+              Detailed Gap Matrix →
+            </Link>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
+            {weakDomains.map((wd) => {
+              const ragCourse = ragGrowthCourses[wd.id];
+              const deficit = Math.max(0, wd.targetBenchmark - wd.currentScore);
+              return (
+                <div
+                  key={wd.id}
+                  style={{
+                    background: "rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    borderRadius: 10,
+                    padding: 16,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: 10,
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.accent, fontWeight: 700, marginBottom: 4 }}>
+                      <span>Deficit: -{deficit}%</span>
+                      <span>Target: {wd.targetBenchmark}%</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#E0E0E0", fontWeight: 600 }}>
+                      Target Weakness: <strong>{wd.name}</strong>
+                    </div>
+
+                    <h4 style={{ margin: "6px 0 2px", fontSize: 14, fontWeight: 700, color: "#fff", lineHeight: 1.35 }}>
+                      {ragCourse ? ragCourse.title : `${wd.name} Targeted Module`}
+                    </h4>
+                    <div style={{ fontSize: 11.5, color: "#C0D6C8" }}>
+                      {ragCourse ? `${ragCourse.org || "iGOT Karmayogi"} • ${ragCourse.duration}h` : "Official Platform Curriculum"}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, background: "#EBF5F0", color: C.s1, padding: "2px 6px", borderRadius: 4 }}>
+                      ⚡ RAG Grounded
+                    </span>
+                    <button
+                      onClick={() => navigate(ragCourse ? `/student/courses/${ragCourse.id}/learn` : "/student/courses")}
+                      style={{
+                        padding: "6px 14px",
+                        background: C.accent,
+                        color: "#1B3D29",
+                        border: "none",
+                        borderRadius: 6,
+                        fontWeight: 700,
+                        fontSize: 11.5,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Remediate →
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Enrolled Courses Progress Breakdown */}
       <div

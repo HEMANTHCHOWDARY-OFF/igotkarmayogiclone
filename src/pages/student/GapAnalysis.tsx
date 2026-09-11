@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   RadarChart,
@@ -23,6 +23,8 @@ import { useCompetency } from "@/context/CompetencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { getCoursesByTitlesOrIds, type IGOTCatalogCourse } from "@/services/karmayogiCoursesService";
 import { getCourseProgress } from "@/services/courseProgressService";
+import { retrieveCoursesForTopicOrGap } from "@/services/rag/ragService";
+import type { RetrievedCourse } from "@/services/rag/ragTypes";
 
 function gapColor(gap: number) {
   if (gap > 25) return C.s4;      // Critical gap (Red/Terracotta)
@@ -243,9 +245,41 @@ export default function GapAnalysis() {
       })
     : "Baseline Evaluation";
 
-  // Prioritized Courses dynamically mapped to highest gaps
+  // Dynamic RAG Courses mapped to detected knowledge gaps
+  const [ragGapCourses, setRagGapCourses] = useState<Record<string, RetrievedCourse>>({});
+
+  useEffect(() => {
+    const gaps = displayedMetrics.filter((d) => d.gap > 0).slice(0, 4);
+    if (gaps.length === 0) return;
+
+    let isMounted = true;
+    const fetchRagCourses = async () => {
+      const mapped: Record<string, RetrievedCourse> = {};
+      for (const g of gaps) {
+        try {
+          const res = await retrieveCoursesForTopicOrGap(g.domain, { limit: 1 });
+          if (res.isGrounded && res.retrievedCourses.length > 0) {
+            mapped[g.id] = res.retrievedCourses[0];
+          }
+        } catch {
+          // Graceful ignore
+        }
+      }
+      if (isMounted) {
+        setRagGapCourses(mapped);
+      }
+    };
+
+    fetchRagCourses();
+    return () => {
+      isMounted = false;
+    };
+  }, [displayedMetrics]);
+
+  // Prioritized Courses dynamically mapped to highest gaps using RAG
   const prioritizedCourses = useMemo(() => {
     return displayedMetrics.filter((d) => d.gap > 0).slice(0, 3).map((m) => {
+      // 1. Check if user already enrolled in a matching course
       const matchedUserCourse = userSelectedCourses.find(
         (uc) =>
           uc.domain.toLowerCase().includes(m.domain.toLowerCase()) ||
@@ -264,9 +298,28 @@ export default function GapAnalysis() {
           gapPoints: m.gap,
           severity: m.severity,
           estHours: m.estHours,
+          isRAG: true,
         };
       }
 
+      // 2. Check if RAG retrieved a real matching course from database
+      const ragMatch = ragGapCourses[m.id];
+      if (ragMatch) {
+        return {
+          title: ragMatch.title,
+          courseCode: ragMatch.code,
+          duration: `${ragMatch.duration || m.estHours}h`,
+          provider: `${ragMatch.org || "iGOT"} • RAG Knowledge Base`,
+          courseId: ragMatch.id,
+          gap: m.domain,
+          gapPoints: m.gap,
+          severity: m.severity,
+          estHours: ragMatch.duration || m.estHours,
+          isRAG: true,
+        };
+      }
+
+      // 3. Fallback catalog mapping
       const courseMeta = DOMAIN_COURSE_MAP[m.id] || {
         title: `${m.domain} Capacity Building Module`,
         courseCode: `IGOT-${m.short.toUpperCase().slice(0, 3)}-201`,
@@ -281,9 +334,10 @@ export default function GapAnalysis() {
         gap: m.domain,
         gapPoints: m.gap,
         severity: m.severity,
+        isRAG: false,
       };
     });
-  }, [displayedMetrics, userSelectedCourses]);
+  }, [displayedMetrics, userSelectedCourses, ragGapCourses]);
 
   return (
     <div style={{ fontFamily: FONT.body, color: C.dark, padding: "28px 32px" }}>
@@ -1021,18 +1075,35 @@ export default function GapAnalysis() {
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: "#fff",
-                        background: "#1B3D29",
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                      }}
-                    >
-                      {c.provider}
-                    </span>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: "#fff",
+                          background: "#1B3D29",
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                        }}
+                      >
+                        {c.provider}
+                      </span>
+                      {c.isRAG && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            background: "#EBF5F0",
+                            color: C.s1,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            border: `1px solid ${C.s1}30`,
+                          }}
+                        >
+                          ⚡ RAG Grounded
+                        </span>
+                      )}
+                    </div>
                     <span
                       style={{
                         fontSize: 10.5,

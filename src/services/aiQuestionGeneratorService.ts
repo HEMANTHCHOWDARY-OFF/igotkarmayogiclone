@@ -1,5 +1,6 @@
 import type { DiagnosticQuestion } from "@/context/CompetencyContext";
 import type { IGOTCatalogCourse } from "@/services/karmayogiCoursesService";
+import { retrieveCoursesForTopicOrGap } from "./rag/ragService";
 
 export interface AIQuestionMetadata {
   bloomLevel: "Recall" | "Application" | "Analysis" | "Evaluation";
@@ -426,4 +427,161 @@ export function generateAssessmentQuestionsForCourses(
     ...q,
     id: index + 1,
   }));
+}
+
+const GROQ_API_KEY =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_GROQ_API_KEY) ||
+  (typeof process !== "undefined" && process.env?.VITE_GROQ_API_KEY) ||
+  "";
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+
+/**
+ * Generates MCQs dynamically using RAG course retrieval and Groq AI.
+ * Questions are strictly grounded in retrieved course outcomes and syllabus.
+ */
+export async function generateMCQsWithRAG(params: {
+  courseOrTopic: string;
+  activeCourses?: IGOTCatalogCourse[];
+  targetLevel?: string;
+  totalQuestionsCount?: number;
+}): Promise<ExtendedDiagnosticQuestion[]> {
+  const {
+    courseOrTopic,
+    activeCourses = [],
+    targetLevel = "Applied",
+    totalQuestionsCount = 5,
+  } = params;
+
+  // Fallback questions to guarantee instant return if Groq is unavailable
+  const fallbackQuestions = generateAssessmentQuestionsForCourses(
+    activeCourses,
+    totalQuestionsCount,
+    courseOrTopic
+  );
+
+  if (!GROQ_API_KEY) {
+    return fallbackQuestions;
+  }
+
+  // 1. Retrieve course knowledge base content using RAG
+  let ragContext = "";
+  let matchedCourseTitle = courseOrTopic;
+  let matchedCourseCode = "IGOT-DIAG";
+  let domain = "Public Administration";
+  let isGrounded = false;
+
+  try {
+    const ragResult = await retrieveCoursesForTopicOrGap(courseOrTopic, { limit: 2 });
+    isGrounded = ragResult.isGrounded && ragResult.retrievedCourses.length > 0;
+    if (isGrounded) {
+      const topMatch = ragResult.retrievedCourses[0];
+      matchedCourseTitle = topMatch.title;
+      matchedCourseCode = topMatch.code;
+      domain = topMatch.domain;
+      ragContext = ragResult.ragContext;
+    }
+  } catch (err) {
+    console.warn("RAG retrieval for MCQ generation encountered error:", err);
+  }
+
+  const systemPrompt = `You are the Chief Assessment Psychometrician for India's iGOT Karmayogi capacity-building platform.
+Your task is to generate high-fidelity, scenario-based diagnostic Multiple Choice Questions (MCQs) for Indian civil servants and administrative learners.
+
+GROUNDING & INTEGRITY RULES:
+${
+  isGrounded
+    ? `1. The questions MUST test concepts, procedures, rules, and outcomes from the provided [OFFICIAL COURSE KNOWLEDGE BASE].
+2. Do not invent fake laws or unrelated topics. Ground questions in the actual syllabus.
+3. Citations must reference the course title or official national standards (e.g. GFR 2017, DPDP Act 2023, MoSPI Guidelines, NeGD SOPs).`
+    : `1. No exact course was found in the database. Generate high-quality diagnostic questions testing standard principles in ${courseOrTopic}.
+2. Mark citation as "General National Administrative Framework".`
+}
+
+Output strictly valid JSON matching this schema:
+{
+  "questions": [
+    {
+      "text": "Clear, practical scenario-based problem statement",
+      "options": [
+        "Option A text",
+        "Option B text",
+        "Option C text",
+        "Option D text"
+      ],
+      "correct": 0,
+      "explanation": "2-3 sentence rigorous technical/statutory justification of why this option is correct.",
+      "bloomLevel": "Recall" | "Application" | "Analysis" | "Evaluation",
+      "difficulty": "Foundational" | "Applied" | "Advanced",
+      "citation": {
+        "documentName": "string",
+        "chapter": "string",
+        "page": "string"
+      }
+    }
+  ]
+}`;
+
+  const userPrompt = `Generate ${totalQuestionsCount} assessment MCQs for:
+Topic / Target: "${courseOrTopic}"
+Difficulty Level: "${targetLevel}"
+${isGrounded ? `[OFFICIAL COURSE KNOWLEDGE BASE]:\n${ragContext}` : ""}
+
+Ensure exactly 4 options per question, indicate the correct option index (0 to 3), and provide detailed citations.`;
+
+  try {
+    const res = await fetch(GROQ_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.25,
+        max_tokens: 2200,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      console.warn("Groq MCQ generation failed:", res.status);
+      return fallbackQuestions;
+    }
+
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) return fallbackQuestions;
+
+    const parsed = JSON.parse(content);
+    if (!parsed.questions || !Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+      return fallbackQuestions;
+    }
+
+    return parsed.questions.map((q: any, idx: number) => ({
+      id: idx + 1,
+      domain,
+      domainId: domain.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 10),
+      courseTitle: matchedCourseTitle,
+      courseCode: matchedCourseCode,
+      difficulty: q.difficulty || targetLevel,
+      bloomLevel: q.bloomLevel || "Application",
+      isAIGenerated: true,
+      text: q.text,
+      options: q.options || ["Option A", "Option B", "Option C", "Option D"],
+      correct: typeof q.correct === "number" ? q.correct : 0,
+      explanation: q.explanation || "Official competency guideline standard.",
+      citation: q.citation || {
+        documentName: matchedCourseTitle,
+        chapter: "Core Competency Guidelines",
+        page: "Official Syllabus",
+      },
+    }));
+  } catch (err) {
+    console.warn("Groq MCQ generation exception:", err);
+    return fallbackQuestions;
+  }
 }

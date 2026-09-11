@@ -4,7 +4,11 @@ import { C, FONT } from "@/tokens";
 import { useCompetency } from "@/context/CompetencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { getCoursesByTitlesOrIds, getAllUnifiedCourses, type IGOTCatalogCourse } from "@/services/karmayogiCoursesService";
-import { generateAssessmentQuestionsForCourses, type ExtendedDiagnosticQuestion } from "@/services/aiQuestionGeneratorService";
+import {
+  generateAssessmentQuestionsForCourses,
+  generateMCQsWithRAG,
+  type ExtendedDiagnosticQuestion,
+} from "@/services/aiQuestionGeneratorService";
 
 const TOTAL_SECONDS = 20 * 60;
 
@@ -74,13 +78,54 @@ export default function Assessment() {
     }
   }, [isExamRoute]);
 
-  // Dynamically generate AI questions based on the currently learning courses
-  const questions: ExtendedDiagnosticQuestion[] = useMemo(() => {
+  // Dynamically generate AI questions based on the currently learning courses via RAG
+  const [questions, setQuestions] = useState<ExtendedDiagnosticQuestion[]>(() => {
     return generateAssessmentQuestionsForCourses(
       currentlyLearningCourses,
       10,
       selectedAssessmentCourseId === "all" ? undefined : selectedAssessmentCourseId
     );
+  });
+
+  // Automatically query RAG knowledge base for selected course and synthesize grounded MCQs
+  useEffect(() => {
+    // Immediate baseline questions to prevent loading flicker
+    setQuestions(
+      generateAssessmentQuestionsForCourses(
+        currentlyLearningCourses,
+        10,
+        selectedAssessmentCourseId === "all" ? undefined : selectedAssessmentCourseId
+      )
+    );
+
+    let isMounted = true;
+    const loadRAGGroundedQuestions = async () => {
+      const activeCourseObj =
+        selectedAssessmentCourseId !== "all"
+          ? currentlyLearningCourses.find((c) => String(c.id) === selectedAssessmentCourseId)
+          : currentlyLearningCourses[0];
+
+      const topicOrCourse = activeCourseObj ? activeCourseObj.title : profile?.track || "Public Administration";
+      try {
+        const ragQuestions = await generateMCQsWithRAG({
+          courseOrTopic: topicOrCourse,
+          activeCourses: currentlyLearningCourses,
+          targetLevel: activeCourseObj?.level || "Applied",
+          totalQuestionsCount: 10,
+        });
+
+        if (isMounted && ragQuestions && ragQuestions.length > 0) {
+          setQuestions(ragQuestions);
+        }
+      } catch (err) {
+        console.warn("RAG question load fallback:", err);
+      }
+    };
+
+    loadRAGGroundedQuestions();
+    return () => {
+      isMounted = false;
+    };
   }, [currentlyLearningCourses, selectedAssessmentCourseId]);
 
   const [current, setCurrent] = useState(0);
@@ -592,27 +637,29 @@ export default function Assessment() {
             ← Return to Previous Page
           </button>
 
-          <button
-            onClick={() => setShowConfirmModal(true)}
-            style={{
-              padding: "14px 36px",
-              background: C.dark,
-              color: "#FAF7F0",
-              border: "none",
-              borderRadius: 9,
-              fontFamily: FONT.display,
-              fontSize: 15.5,
-              fontWeight: 700,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              boxShadow: "0 4px 16px rgba(27, 61, 41, 0.3)",
-            }}
-          >
-            <span>🚀 Start AI Assessment Now (20:00)</span>
-            <span>→</span>
-          </button>
+          <div>
+            <button
+              onClick={() => setShowConfirmModal(true)}
+              style={{
+                padding: "14px 36px",
+                background: C.dark,
+                color: "#FAF7F0",
+                border: "none",
+                borderRadius: 9,
+                fontFamily: FONT.display,
+                fontSize: 15.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                boxShadow: "0 4px 16px rgba(27, 61, 41, 0.3)",
+              }}
+            >
+              <span>🚀 Start AI Assessment Now (20:00)</span>
+              <span>→</span>
+            </button>
+          </div>
         </div>
 
         {/* Confirmation Modal Pop-Up Dialog */}

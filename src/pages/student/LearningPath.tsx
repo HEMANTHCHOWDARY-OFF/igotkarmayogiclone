@@ -7,6 +7,7 @@ import { getCoursesByTitlesOrIds, type IGOTCatalogCourse } from "@/services/karm
 import {
   generateProceduralRoadmapForCourse,
   generateAIRoadmapForCourse,
+  generatePersonalizedLearningPathRAG,
   askRoadmapAITutor,
   type RoadmapCourseBlock,
   type FullCourseRoadmapData,
@@ -17,7 +18,7 @@ const ROADMAP_PROGRESS_KEY = "gyanmarg_roadmap_progress_v2";
 export default function LearningPath() {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { getSkillHealthScore } = useCompetency();
+  const { getSkillHealthScore, getGapMetrics } = useCompetency();
 
   const skillHealth = getSkillHealthScore();
 
@@ -87,24 +88,42 @@ export default function LearningPath() {
     });
   };
 
-  // AI Roadmap Regeneration
+  // AI Roadmap Generation (Inherently grounded in Course Database & RAG)
   const handleRegenerateWithAI = async () => {
-    if (userSelectedCourses.length === 0) return;
     setIsGeneratingAI(true);
     setShowAiModal(false);
 
     try {
-      const targetCourse =
-        selectedCourseFilter === "all"
-          ? userSelectedCourses[0]
-          : userSelectedCourses.find((c) => String(c.id) === selectedCourseFilter) || userSelectedCourses[0];
+      if (selectedCourseFilter === "all" || userSelectedCourses.length === 0) {
+        const gapMetrics = getGapMetrics ? getGapMetrics() : [];
+        const topGaps = gapMetrics.filter((g) => g.gap > 10).map((g) => g.domain);
+        const ragPath = await generatePersonalizedLearningPathRAG(
+          {
+            goal: aiFocusPrompt || profile?.track || "Civil Service Capacity Building",
+            track: profile?.track,
+            knowledgeGaps: topGaps,
+            selectedDomains: profile?.interestedDomains,
+            selectedSubDomains: profile?.interestedSubDomains,
+          },
+          aiFocusPrompt
+        );
 
-      const newRoadmap = await generateAIRoadmapForCourse(targetCourse, aiFocusPrompt);
+        setRoadmapsByCourse((prev) => ({
+          ...prev,
+          all: ragPath,
+        }));
+        setSelectedCourseFilter("all");
+      } else {
+        const targetCourse =
+          userSelectedCourses.find((c) => String(c.id) === selectedCourseFilter) || userSelectedCourses[0];
 
-      setRoadmapsByCourse((prev) => ({
-        ...prev,
-        [String(targetCourse.id)]: newRoadmap,
-      }));
+        const newRoadmap = await generateAIRoadmapForCourse(targetCourse, aiFocusPrompt);
+
+        setRoadmapsByCourse((prev) => ({
+          ...prev,
+          [String(targetCourse.id)]: newRoadmap,
+        }));
+      }
     } catch (err) {
       console.warn("Failed AI generation:", err);
     } finally {
@@ -1108,21 +1127,25 @@ export default function LearningPath() {
                 Cancel
               </button>
               <button
-                onClick={handleRegenerateWithAI}
+                onClick={() => handleRegenerateWithAI()}
                 disabled={isGeneratingAI}
                 style={{
-                  padding: "8px 20px",
+                  padding: "10px 22px",
                   background: "#FFE066",
                   color: "#111",
                   border: "2px solid #111",
                   borderRadius: 8,
                   fontWeight: 800,
                   fontSize: 13.5,
-                  cursor: "pointer",
+                  cursor: isGeneratingAI ? "not-allowed" : "pointer",
                   boxShadow: "0 2px 0 #111",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
-                {isGeneratingAI ? "Generating Roadmap..." : "Generate Custom Roadmap →"}
+                <span>✨</span>
+                <span>{isGeneratingAI ? "Synthesizing AI Roadmap..." : "Generate AI Roadmap →"}</span>
               </button>
             </div>
           </div>
